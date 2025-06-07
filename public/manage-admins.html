@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users & Admins - Hillrange Clubs</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="font-inter bg-gray-100 flex flex-col min-h-screen">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Hillrange Clubs</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="index.html" class="hover:text-blue-200">Home</a></li>
+                    <li><a href="dashboard.html" class="hover:text-blue-200">Clubs</a></li>
+                    <li><a href="login.html" class="hover:text-blue-200 hidden" id="nav-login-link">Login</a></li>
+                    <li><a href="register.html" class="hover:text-blue-200 hidden" id="nav-register-link">Register</a></li>
+                    <li><a href="./dashboard.html" class="hover:text-blue-200 hidden" id="nav-dashboard-link">Dashboard</a></li>
+                    <li><a href="./create-club.html" class="hover:text-blue-200 hidden" id="nav-create-club-link">Create Club</a></li>
+                    <li><a href="./manage-admins.html" class="hover:text-blue-200 hidden" id="nav-manage-admins-link">Manage Admins</a></li>
+                    <li><a href="#" class="hover:text-blue-200 hidden" id="nav-logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 flex-grow">
+        <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Manage Users and Admins</h2>
+
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">All Registered Users</h3>
+            <div id="loadingMessage" class="text-center text-gray-600 text-lg py-4">Loading users...</div>
+            <div id="errorMessage" class="text-center text-red-500 text-lg py-4 hidden">Failed to load users. Please try again later.</div>
+            <div id="noUsersMessage" class="text-center text-gray-600 text-lg py-4 hidden">No users registered yet.</div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg overflow-hidden">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                            <th scope="col" class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                            <th scope="col" class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th scope="col" class="py-3 px-6 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- User rows will be dynamically loaded here by admin.js -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 text-center mt-8">
+        <div class="container mx-auto">
+            <p>&copy; 2025 Hillrange Clubs. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Reset Password Modal (Superadmin Only) -->
+    <div id="resetPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Reset Password for <span id="resetUsernameSpan" class="text-blue-600"></span></h3>
+            <form id="resetPasswordForm">
+                <input type="hidden" id="resetUserId">
+                <div class="mb-4">
+                    <label for="newPassword" class="block text-gray-700 text-sm font-bold mb-2">New Password</label>
+                    <input type="password" id="newPassword" name="newPassword" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter new password" required minlength="6">
+                </div>
+                <div class="mb-6">
+                    <label for="confirmNewPassword" class="block text-gray-700 text-sm font-bold mb-2">Confirm New Password</label>
+                    <input type="password" id="confirmNewPassword" name="confirmNewPassword" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Confirm new password" required minlength="6">
+                </div>
+                <div class="flex items-center justify-between">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300">
+                        Reset Password
+                    </button>
+                    <button type="button" id="cancelResetPassword" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Username Modal (Superadmin Only) -->
+    <div id="changeUsernameModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Change Username for <span id="changeUsernameSpan" class="text-blue-600"></span></h3>
+            <form id="changeUsernameForm">
+                <input type="hidden" id="changeUserId">
+                <div class="mb-4">
+                    <label for="newUsernameInput" class="block text-gray-700 text-sm font-bold mb-2">New Username</label>
+                    <input type="text" id="newUsernameInput" name="newUsername" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter new username" required>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300">
+                        Change Username
+                    </button>
+                    <button type="button" id="cancelChangeUsername" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for token and user role on page load to adjust navigation and authorize access
+            const token = getToken(); // Use helper function
+            const userRole = getUserRole(); // Use helper function
+
+            // Get navigation links
+            const navLoginLink = document.getElementById('nav-login-link');
+            const navRegisterLink = document.getElementById('nav-register-link');
+            const navDashboardLink = document.getElementById('nav-dashboard-link');
+            const navCreateClubLink = document.getElementById('nav-create-club-link');
+            const navManageAdminsLink = document.getElementById('nav-manage-admins-link');
+            const navLogoutLink = document.getElementById('nav-logout-link');
+
+            if (token) {
+                // If logged in, hide login/register and show dashboard/logout
+                if (navLoginLink) navLoginLink.classList.add('hidden');
+                if (navRegisterLink) navRegisterLink.classList.add('hidden');
+                if (navDashboardLink) navDashboardLink.classList.remove('hidden');
+                if (navLogoutLink) navLogoutLink.classList.remove('hidden');
+
+                // Admin/Superadmin specific links
+                if (isAdminOrSuperAdmin()) { // Use helper from utils.js
+                    // Admin can create clubs, Superadmin cannot
+                    if (isSuperAdmin()) { // Use helper from utils.js
+                        if (navCreateClubLink) navCreateClubLink.classList.add('hidden');
+                    } else { // Regular admin
+                        if (navCreateClubLink) navCreateClubLink.classList.remove('hidden');
+                    }
+                    if (navManageAdminsLink) navManageAdminsLink.classList.remove('hidden');
+                    
+                    // loadUsersForAdmin() is now called by admin.js directly when its DOMContentLoaded fires.
+                    // This inline script just handles the navigation bar visibility.
+                } else {
+                    // If not admin/superadmin, redirect away from this page
+                    showToast('You do not have permission to view this page.', 'error');
+                    window.location.href = 'dashboard.html';
+                    return; // Stop execution if redirecting
+                }
+            } else {
+                // If not logged in, redirect to login
+                showToast('Please log in to access this page.', 'warning');
+                window.location.href = 'login.html';
+                return; // Stop execution if redirecting
+            }
+
+            // Handle logout (This logic is also in auth.js, but kept here for consistency with your provided code)
+            if (navLogoutLink) {
+                navLogoutLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    localStorage.clear(); // Clear all user data
+                    showToast('You have been logged out.', 'info');
+                    window.location.href = 'index.html'; // Redirect to home page
+                });
+            }
+        });
+    </script>
+</body>
+</html>

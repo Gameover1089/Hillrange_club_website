@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Profile - Hillrange Clubs</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+  </head>
+  <body class="font-inter bg-gray-100 flex flex-col min-h-screen">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+      <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-3xl font-bold">Hillrange Clubs</h1>
+        <nav>
+          <ul class="flex space-x-4">
+            <li><a href="index.html" class="hover:text-blue-200">Home</a></li>
+            <li><a href="club.html" class="hover:text-blue-200">Clubs</a></li>
+            <li>
+              <a
+                href="login.html"
+                class="hover:text-blue-200 hidden"
+                id="nav-login-link"
+                >Login</a
+              >
+            </li>
+            <li>
+              <a
+                href="register.html"
+                class="hover:text-blue-200 hidden"
+                id="nav-register-link"
+                >Register</a
+              >
+            </li>
+            <li>
+              <a
+                href="./dashboard.html"
+                class="hover:text-blue-200"
+                id="nav-dashboard-link"
+                >Dashboard</a
+              >
+            </li>
+            <li>
+              <a
+                href="./create-club.html"
+                class="hover:text-blue-200 hidden"
+                id="nav-create-club-link"
+                >Create Club</a
+              >
+            </li>
+            <li>
+              <a
+                href="./manage-admins.html"
+                class="hover:text-blue-200 hidden"
+                id="nav-manage-admins-link"
+                >Manage Admins</a
+              >
+            </li>
+            <li>
+              <a href="#" class="hover:text-blue-200" id="nav-logout-link"
+                >Logout</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main
+      class="container mx-auto p-6 flex-grow flex items-center justify-center"
+    >
+      <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">
+          Edit Your Profile
+        </h2>
+        <form
+          id="editProfileForm"
+          class="space-y-4"
+          enctype="multipart/form-data"
+        >
+          <div>
+            <label
+              for="username"
+              class="block text-gray-700 text-sm font-bold mb-2"
+              >Username:</label
+            >
+            <input
+              type="text"
+              id="username"
+              name="username"
+              class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled
+            />
+            <p class="text-sm text-gray-500 mt-1">
+              Username cannot be changed.
+            </p>
+          </div>
+          <div>
+            <label
+              for="newPassword"
+              class="block text-gray-700 text-sm font-bold mb-2"
+              >New Password (Optional):</label
+            >
+            <input
+              type="password"
+              id="newPassword"
+              name="newPassword"
+              class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Leave blank to keep current password"
+            />
+          </div>
+          <div>
+            <label
+              for="confirmNewPassword"
+              class="block text-gray-700 text-sm font-bold mb-2"
+              >Confirm New Password:</label
+            >
+            <input
+              type="password"
+              id="confirmNewPassword"
+              name="confirmNewPassword"
+              class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-gray-700 text-sm font-bold mb-2"
+              >Profile Picture:</label
+            >
+            <div class="flex items-center space-x-4 mb-3">
+              <img
+                id="currentProfilePicture"
+                src="https://placehold.co/100x100/cccccc/333333?text=No+Image"
+                alt="Current Profile Picture"
+                class="w-24 h-24 rounded-full object-cover border-2 border-blue-400"
+              />
+              <div>
+                <input
+                  type="file"
+                  id="profilePicture"
+                  name="profilePicture"
+                  accept="image/*"
+                  class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <p
+                  id="profilePictureMessage"
+                  class="text-sm text-gray-500 mt-1"
+                >
+                  Select a new image to change your profile picture.
+                </p>
+              </div>
+            </div>
+          </div>
+          <button
+            type="submit"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full focus:outline-none focus:shadow-outline transition duration-300"
+          >
+            Save Changes
+          </button>
+        </form>
+        <p id="message" class="mt-4 text-center text-sm"></p>
+      </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 text-center mt-8">
+      <div class="container mx-auto">
+        <p>&copy; 2025 Hillrange Clubs. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const token = localStorage.getItem("token");
+        const userRole = localStorage.getItem("userRole");
+        const username = localStorage.getItem("username");
+        const userId = localStorage.getItem("userId");
+
+        const navLoginLink = document.getElementById("nav-login-link");
+        const navRegisterLink = document.getElementById("nav-register-link");
+        const navDashboardLink = document.getElementById("nav-dashboard-link");
+        const navCreateClubLink = document.getElementById(
+          "nav-create-club-link"
+        );
+        const navManageAdminsLink = document.getElementById(
+          "nav-manage-admins-link"
+        );
+        const navLogoutLink = document.getElementById("nav-logout-link");
+
+        // Handle logout
+        navLogoutLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          localStorage.removeItem("token");
+          localStorage.removeItem("userRole");
+          localStorage.removeItem("username");
+          localStorage.removeItem("userId");
+          window.location.href = "index.html";
+        });
+
+        if (token) {
+          // Update navigation
+          navLoginLink.classList.add("hidden");
+          navRegisterLink.classList.add("hidden");
+          navDashboardLink.classList.remove("hidden");
+          navLogoutLink.classList.remove("hidden");
+
+          if (userRole === "admin") {
+            navCreateClubLink.classList.remove("hidden");
+            navManageAdminsLink.classList.remove("hidden");
+          } else {
+            navCreateClubLink.classList.add("hidden");
+            navManageAdminsLink.classList.add("hidden");
+          }
+
+          // Set username
+          document.getElementById("username").value = username;
+
+          // Load profile data
+          loadUserProfile();
+        } else {
+          alert("Please log in to access this page.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Profile form submission
+        document
+          .getElementById("editProfileForm")
+          .addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const newPassword = document.getElementById("newPassword").value;
+            const confirmPassword =
+              document.getElementById("confirmNewPassword").value;
+            const fileInput = document.getElementById("profilePicture");
+
+            // Validate passwords
+            if (newPassword && newPassword.length < 6) {
+              showMessage("Password must be at least 6 characters", "error");
+              return;
+            }
+
+            if (newPassword !== confirmPassword) {
+              showMessage("Passwords do not match", "error");
+              return;
+            }
+
+            const formData = new FormData();
+            if (newPassword) formData.append("newPassword", newPassword);
+            if (fileInput.files[0])
+              formData.append("profilePicture", fileInput.files[0]);
+
+            try {
+              const response = await fetch("/api/profile", {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+              });
+
+              const result = await response.json();
+
+              if (response.ok) {
+                showMessage("Profile updated successfully!", "success");
+                // Update profile picture display
+                if (fileInput.files[0]) {
+                  const newImageUrl = URL.createObjectURL(fileInput.files[0]);
+                  document.getElementById("currentProfilePicture").src =
+                    newImageUrl;
+                }
+                setTimeout(() => {
+                  window.location.href = "dashboard.html";
+                }, 1500);
+              } else {
+                showMessage(
+                  result.message || "Error updating profile",
+                  "error"
+                );
+              }
+            } catch (error) {
+              console.error("Update error:", error);
+              showMessage("Network error updating profile", "error");
+            }
+          });
+
+        async function loadUserProfile() {
+          try {
+            const response = await fetch("/api/user/profile", {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error("Failed to load profile");
+            }
+
+            const user = await response.json();
+
+            // Update profile picture
+            if (user.profilePictureUrl) {
+              document.getElementById("currentProfilePicture").src =
+                user.profilePictureUrl;
+            }
+          } catch (error) {
+            console.error("Error loading profile:", error);
+          }
+        }
+
+        function showMessage(msg, type) {
+          const messageEl = document.getElementById("message");
+          messageEl.textContent = msg;
+          messageEl.className = `mt-4 text-center text-sm ${
+            type === "success" ? "text-green-600" : "text-red-600"
+          }`;
+        }
+      });
+    </script>
+  </body>
+</html>

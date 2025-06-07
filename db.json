@@ -1,0 +1,29 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "Test",
+      "password": "$2b$10$HhtyeiPL2/KCzz2P9qknF.0DmY0BwG/L7oMC4Tv9olcKx8.hngJFe",
+      "role": "admin",
+      "updatedAt": "2025-06-07T13:45:35.117Z",
+      "profilePictureUrl": "/uploads/1749303935111-Screenshot 2025-05-31 063820.png"
+    },
+    {
+      "id": 2,
+      "username": "user",
+      "password": "$2b$10$SFLPIApRv3Nju8VbTiMhne67wD00yh3jo5kb2ZxfrZe2XiokRyxtW",
+      "role": "user",
+      "updatedAt": "2025-06-07T13:49:13.128Z",
+      "profilePictureUrl": "/uploads/1749165353501-Screenshot (1).png"
+    },
+    {
+      "id": 3,
+      "username": "superadmin",
+      "password": "$2b$10$52NQT0jQwrO50YhKlizqUuaRjCi1yTLiSnSGdbgwc7R7ym5zcb.ie",
+      "role": "superadmin",
+      "profilePictureUrl": "/uploads/1749250402446-Screenshot (1).png",
+      "updatedAt": "2025-06-06T22:53:22.469Z"
+    }
+  ],
+  "clubs": []
+}

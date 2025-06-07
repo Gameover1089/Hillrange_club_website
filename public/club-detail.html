@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Details - Hillrange Clubs</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="font-inter bg-gray-100 flex flex-col min-h-screen">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Hillrange Clubs</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="index.html" class="hover:text-blue-200">Home</a></li>
+                    <li><a href="club.html" class="hover:text-blue-200">Clubs</a></li>
+                    <li><a href="login.html" class="hover:text-blue-200 hidden" id="nav-login-link">Login</a></li>
+                    <li><a href="register.html" class="hover:text-blue-200 hidden" id="nav-register-link">Register</a></li>
+                    <li><a href="./dashboard.html" class="hover:text-blue-200" id="nav-dashboard-link">Dashboard</a></li>
+                    <li><a href="./create-club.html" class="hover:text-blue-200 hidden" id="nav-create-club-link">Create Club</a></li>
+                    <li><a href="./manage-admins.html" class="hover:text-blue-200 hidden" id="nav-manage-admins-link">Manage Admins</a></li>
+                    <li><a href="#" class="hover:text-blue-200" id="nav-logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 flex-grow">
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+            <h2 class="text-4xl font-bold text-gray-800 mb-6 text-center" id="clubName">Loading Club...</h2>
+
+            <!-- Club Header/Summary -->
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
+                <img id="clubImage" src="https://placehold.co/400x250/cccccc/333333?text=Club+Image" alt="Club Image" class="w-full md:w-1/3 h-64 object-cover rounded-lg shadow-md border border-gray-200">
+                <div class="flex-grow text-center md:text-left">
+                    <p class="text-gray-600 text-lg mb-2" id="clubCategory"><i class="fas fa-tag mr-2"></i>Category: N/A</p>
+                    <p class="text-gray-600 text-lg mb-2" id="clubContact"><i class="fas fa-envelope mr-2"></i>Contact: N/A</p>
+                    <p class="text-gray-700 text-base leading-relaxed" id="clubDescription">Loading description...</p>
+                    <div class="mt-4 flex flex-wrap justify-center md:justify-start gap-3">
+                        <button id="joinLeaveBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-5 rounded-lg shadow-md transition duration-300 flex items-center gap-2">
+                            <i class="fas fa-plus-circle"></i> Join Club
+                        </button>
+                        <button id="editClubBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-5 rounded-lg shadow-md transition duration-300 hidden flex items-center gap-2">
+                            <i class="fas fa-edit"></i> Edit Club
+                        </button>
+                        <button id="deleteClubBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded-lg shadow-md transition duration-300 hidden flex items-center gap-2">
+                            <i class="fas fa-trash-alt"></i> Delete Club
+                        </button>
+                        <button id="viewMembersBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-5 rounded-lg text-sm transition duration-300 hidden flex items-center gap-2">
+                            <i class="fas fa-users"></i> View Members
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabbed Interface -->
+            <div class="border-b border-gray-200 mb-6">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button id="detailsTab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg focus:outline-none transition duration-300 text-blue-600 border-blue-500" aria-current="page">
+                        Details
+                    </button>
+                    <button id="membersTab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg focus:outline-none transition duration-300 text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab-name="members">
+                        Members (<span id="membersCount">0</span>)
+                    </button>
+                    <button id="announcementsTab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg focus:outline-none transition duration-300 text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab-name="announcements">
+                        Announcements (<span id="announcementsCount">0</span>)
+                    </button>
+                    <button id="chatTab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg focus:outline-none transition duration-300 text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab-name="chat">
+                        Chat
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tabContent">
+                <!-- Details Tab Content -->
+                <div id="detailsContent" class="tab-pane">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">About This Club</h3>
+                    <p class="text-gray-700 leading-relaxed" id="fullDescription">Loading full description...</p>
+                    <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="text-gray-700"><i class="fas fa-info-circle mr-2 text-blue-500"></i>Created On: <span id="createdAt">N/A</span></p>
+                        <p class="text-gray-700"><i class="fas fa-sync-alt mr-2 text-blue-500"></i>Last Updated: <span id="updatedAt">N/A</span></p>
+                        <p class="text-gray-700"><i class="fas fa-user-tie mr-2 text-blue-500"></i>Created By: <span id="creatorUsername">N/A</span></p>
+                    </div>
+                </div>
+
+                <!-- Members Tab Content -->
+                <div id="membersContent" class="tab-pane hidden">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Club Members</h3>
+                    <div id="membersList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Members will be loaded here -->
+                        <p id="noMembersMessage" class="text-gray-600 italic col-span-full hidden">No members yet.</p>
+                        <p id="membersAccessMessage" class="text-red-500 italic col-span-full hidden">You do not have permission to view club members.</p>
+                    </div>
+                </div>
+
+                <!-- Announcements Tab Content -->
+                <div id="announcementsContent" class="tab-pane hidden">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Announcements</h3>
+                    <div id="announcementFormContainer" class="bg-gray-50 p-4 rounded-lg shadow-inner mb-6 hidden">
+                        <form id="announcementForm" class="flex flex-col gap-3">
+                            <textarea id="announcementText" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Write a new announcement..." required></textarea>
+                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg self-end transition duration-300">
+                                Post Announcement
+                            </button>
+                        </form>
+                        <p id="announcementMessage" class="mt-2 text-center text-sm"></p>
+                    </div>
+                    <div id="announcementsList" class="space-y-4">
+                        <!-- Announcements will be loaded here -->
+                        <p id="noAnnouncementsMessage" class="text-gray-600 italic hidden">No announcements yet.</p>
+                    </div>
+                </div>
+
+                <!-- Chat Tab Content -->
+                <div id="chatContent" class="tab-pane hidden">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Club Chat</h3>
+                    <p id="chatAccessMessage" class="text-red-500 italic mb-4 hidden">You must be a member of this club to participate in chat.</p>
+                    <div id="chatBox" class="bg-gray-50 h-96 overflow-y-auto p-4 rounded-lg border border-gray-200 flex flex-col space-y-3 mb-4">
+                        <!-- Chat messages will be loaded here -->
+                        <p id="noChatMessages" class="text-gray-600 italic text-center hidden">No messages yet. Start the conversation!</p>
+                    </div>
+                    <div id="chatInputContainer" class="flex gap-2 hidden">
+                        <input type="text" id="chatMessageInput" class="flex-grow p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your message..." disabled>
+                        <button id="sendChatMessageBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                    <p id="chatMessageStatus" class="mt-2 text-center text-sm"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 text-center mt-8">
+        <div class="container mx-auto">
+            <p>&copy; 2025 Hillrange Clubs. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/clubs.js"></script> <!-- Still useful for join/leave logic if needed directly -->
+    <script src="js/club-detail.js"></script> <!-- New script for this page -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const userRole = localStorage.getItem('userRole');
+
+            const navLoginLink = document.getElementById('nav-login-link');
+            const navRegisterLink = document.getElementById('nav-register-link');
+            const navDashboardLink = document.getElementById('nav-dashboard-link');
+            const navCreateClubLink = document.getElementById('nav-create-club-link');
+            const navManageAdminsLink = document.getElementById('nav-manage-admins-link');
+            const navLogoutLink = document.getElementById('nav-logout-link');
+
+            if (token) {
+                navLoginLink.classList.add('hidden');
+                navRegisterLink.classList.add('hidden');
+                navDashboardLink.classList.remove('hidden');
+                navLogoutLink.classList.remove('hidden');
+                if (userRole === 'admin') {
+                    navCreateClubLink.classList.remove('hidden');
+                    navManageAdminsLink.classList.remove('hidden');
+                }
+            } else {
+                navLoginLink.classList.remove('hidden');
+                navRegisterLink.classList.remove('hidden');
+                navDashboardLink.classList.add('hidden');
+                navCreateClubLink.classList.add('hidden');
+                navManageAdminsLink.classList.add('hidden');
+                navLogoutLink.classList.add('hidden');
+            }
+
+            navLogoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userId');
+                window.location.href = 'index.html';
+            });
+
+            // Initialize club details on page load
+            // loadClubDetails();
+        });
+    </script>
+</body>
+</html>

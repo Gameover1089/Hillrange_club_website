@@ -1,0 +1,1905 @@
+<ul class="flex space-x-4">
+                    <li><a href="index.html" class="hover:text-blue-200">Home</a></li>
+                    <li><a href="club.html" class="hover:text-blue-200">Clubs</a></li>
+                    <li><a href="login.html" class="hover:text-blue-200 hidden" id="nav-login-link">Login</a></li>
+                    <li><a href="register.html" class="hover:text-blue-200 hidden" id="nav-register-link">Register</a></li>
+                    <li><a href="./dashboard.html" class="hover:text-blue-200" id="nav-dashboard-link">Dashboard</a></li>
+                    <li><a href="./create-club.html" class="hover:text-blue-200 hidden" id="nav-create-club-link">Create Club</a></li>
+                    <li><a href="./manage-admins.html" class="hover:text-blue-200 hidden" id="nav-manage-admins-link">Manage Admins</a></li>
+                    <li><a href="#" class="hover:text-blue-200" id="nav-logout-link">Logout</a></li>
+                </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+// server.js
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const cors = require('cors');
+const multer = require('multer'); // For handling file uploads
+const bcrypt = require('bcryptjs'); // For password hashing
+const jwt = require('jsonwebtoken'); // For user authentication tokens
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const DB_FILE = path.join(__dirname, 'db.json');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // IMPORTANT: Use a strong, environment-variable secret in production
+
+// --- SUPERADMIN INITIAL SETUP (FOR DEMO/FIRST RUN ONLY) ---
+// Define a special username and password that, when used for the first user registration,
+// will automatically assign the 'superadmin' role.
+// This is for demonstration and initial setup only. In a real application, superadmins
+// would be created through a more secure, isolated process.
+const INITIAL_SUPERADMIN_USERNAME = process.env.SUPERADMIN_USERNAME || 'superadmin';
+const INITIAL_SUPERADMIN_PASSWORD = process.env.SUPERADMIN_PASSWORD || 'superpass123';
+// Make sure these are strong and changed for any actual deployment.
+// -------------------------------------------------------------
+
+
+// Ensure uploads directory exists
+if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR);
+}
+
+// Middleware
+app.use(cors()); // Enable CORS for all routes
+app.use(express.json()); // Parse JSON request bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bodies
+
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+// Serve uploaded images directly
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, UPLOADS_DIR);
+    },
+    filename: (req, file, cb) => {
+        // Use a unique filename to prevent collisions, e.g., timestamp + original name
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+const upload = multer({ storage: storage });
+
+// Helper function to read from db.json
+const readDb = () => {
+    try {
+        if (!fs.existsSync(DB_FILE)) {
+            // If db.json doesn't exist, create it with initial empty data
+            fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], clubs: [] }, null, 2));
+        }
+        const data = fs.readFileSync(DB_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading database file:', error);
+        return { users: [], clubs: [] }; // Return empty data on error
+    }
+};
+
+// Helper function to write to db.json
+const writeDb = (data) => {
+    try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+    } catch (error) {
+        console.error('Error writing to database file:', error);
+    }
+};
+
+// Middleware to verify JWT token
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+        return res.status(401).json({ message: 'Access Denied: No Token Provided' });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            // Check if token is expired
+            if (err.name === 'TokenExpiredError') {
+                return res.status(403).json({ message: 'Access Denied: Token Expired' });
+            }
+            return res.status(403).json({ message: 'Access Denied: Invalid Token' });
+        }
+        req.user = user; // Attach user payload (id, username, role) to request
+        next();
+    });
+};
+
+// Middleware to check if user is an 'admin' (includes superadmin in this check for convenience in some routes)
+const authorizeAdmin = (req, res, next) => {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+        next();
+    } else {
+        res.status(403).json({ message: 'Access Denied: Requires Admin or Super Admin Role' });
+    }
+};
+
+// Middleware to check if user is a 'superadmin'
+const authorizeSuperAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'superadmin') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Access Denied: Requires Super Admin Role' });
+    }
+};
+
+
+// --- AUTHENTICATION ROUTES ---
+
+// User Registration
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
+    const db = readDb();
+
+    // Basic validation
+    if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required' });
+    }
+
+    // Check if user already exists
+    if (db.users.some(user => user.username.toLowerCase() === username.toLowerCase())) {
+        return res.status(409).json({ message: 'Username already exists' });
+    }
+
+    try {
+        // Hash password before saving
+        const hashedPassword = await bcrypt.hash(password, 10); // Salt rounds = 10
+
+        let newUserRole = 'user';
+        // Special logic for initial superadmin registration for demo purposes
+        if (db.users.length === 0 && username === INITIAL_SUPERADMIN_USERNAME && password === INITIAL_SUPERADMIN_PASSWORD) {
+            newUserRole = 'superadmin';
+            console.log(`Initial Super Admin "${INITIAL_SUPERADMIN_USERNAME}" registered successfully!`);
+        }
+
+        const newUser = {
+            id: db.users.length ? Math.max(...db.users.map(u => u.id)) + 1 : 1, // Simple ID generation
+            username,
+            password: hashedPassword,
+            role: newUserRole,
+            profilePictureUrl: null // Initialize with no profile picture
+        };
+        db.users.push(newUser);
+        writeDb(db);
+        res.status(201).json({ message: 'User registered successfully', userId: newUser.id, role: newUserRole });
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ message: 'Server error during registration' });
+    }
+});
+
+// User Login
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    const db = readDb();
+
+    // Find user by username (case-insensitive)
+    const user = db.users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) {
+        return res.status(400).json({ message: 'Invalid username or password' });
+    }
+
+    try {
+        // Compare provided password with hashed password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid username or password' });
+        }
+
+        // Generate JWT token including the user's role
+        const token = jwt.sign(
+            { id: user.id, username: user.username, role: user.role },
+            JWT_SECRET,
+            { expiresIn: '1h' } // Token expires in 1 hour
+        );
+
+        res.status(200).json({ message: 'Login successful', token, user: { id: user.id, username: user.username, role: user.role } });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error during login' });
+    }
+});
+
+// --- USER PROFILE ROUTES (Protected) ---
+
+// Get user profile by ID (for displaying on edit page, etc.)
+app.get('/api/users/:id', authenticateToken, (req, res) => {
+    const userId = parseInt(req.params.id);
+    const db = readDb();
+    const user = db.users.find(u => u.id === userId);
+
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    // A user can view their own profile. An admin or superadmin can view any profile.
+    if (req.user.id !== userId && req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+        return res.status(403).json({ message: 'Access Denied: Not authorized to view this profile.' });
+    }
+
+    // Only return non-sensitive data
+    const { password, ...userData } = user;
+    res.status(200).json(userData);
+});
+
+
+// Update User Profile (password and profile picture)
+app.put('/api/profile', authenticateToken, upload.single('profilePicture'), async (req, res) => {
+    const userId = req.user.id;
+    const { newPassword } = req.body; // newPassword comes from req.body
+    const db = readDb();
+
+    const userIndex = db.users.findIndex(u => u.id === userId);
+
+    if (userIndex === -1) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    try {
+        if (newPassword) {
+            if (newPassword.length < 6) {
+                return res.status(400).json({ message: 'New password must be at least 6 characters long.' });
+            }
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            db.users[userIndex].password = hashedPassword;
+        }
+
+        // Handle profile picture upload
+        if (req.file) {
+            const newProfilePictureUrl = `/uploads/${req.file.filename}`;
+
+            // Optional: Delete old profile picture if it exists
+            if (db.users[userIndex].profilePictureUrl) {
+                const oldImagePath = path.join(__dirname, db.users[userIndex].profilePictureUrl);
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlink(oldImagePath, (err) => {
+                        if (err) console.error('Error deleting old profile picture:', err);
+                    });
+                }
+            }
+            db.users[userIndex].profilePictureUrl = newProfilePictureUrl;
+        }
+
+        db.users[userIndex].updatedAt = new Date().toISOString();
+        writeDb(db);
+        res.status(200).json({ message: 'Profile updated successfully' });
+    } catch (error) {
+        console.error('Error updating user profile:', error);
+        res.status(500).json({ message: 'Server error during profile update' });
+    }
+});
+
+
+// --- CLUB MEMBERSHIP ROUTES (Protected for logged-in users) ---
+
+// Endpoint for a user to join a club
+app.post('/api/clubs/:id/join', authenticateToken, (req, res) => {
+    const clubId = parseInt(req.params.id);
+    const userId = req.user.id; // Get user ID from authenticated token
+    const db = readDb();
+
+    const club = db.clubs.find(c => c.id === clubId);
+    if (!club) {
+        return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Initialize members array if it doesn't exist
+    if (!club.members) {
+        club.members = [];
+    }
+
+    // Check if user is already a member
+    if (club.members.includes(userId)) {
+        return res.status(400).json({ message: 'You are already a member of this club.' });
+    }
+
+    club.members.push(userId); // Add user's ID to the club's members list
+    club.updatedAt = new Date().toISOString();
+    writeDb(db);
+    res.status(200).json({ message: 'Successfully joined the club!', club });
+});
+
+// Endpoint for a user to leave a club
+app.post('/api/clubs/:id/leave', authenticateToken, (req, res) => {
+    const clubId = parseInt(req.params.id);
+    const userId = req.user.id; // Get user ID from authenticated token
+    const db = readDb();
+
+    const club = db.clubs.find(c => c.id === clubId);
+    if (!club) {
+        return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Ensure members array exists and user is actually a member
+    if (!club.members || !club.members.includes(userId)) {
+        return res.status(400).json({ message: 'You are not a member of this club.' });
+    }
+
+    // Remove user's ID from the club's members list
+    club.members = club.members.filter(memberId => memberId !== userId);
+    club.updatedAt = new Date().toISOString();
+    writeDb(db);
+    res.status(200).json({ message: 'Successfully left the club!', club });
+});
+
+
+// --- CLUB MANAGEMENT ROUTES (Protected) ---
+
+// Create a new club (Only 'admin' can create, 'superadmin' cannot)
+app.post('/api/clubs', authenticateToken, upload.single('image'), (req, res) => {
+    // Only allow users with role 'admin' to create clubs, as per requirements
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Access Denied: Only Admins can create clubs.' });
+    }
+
+    const { name, description, category, contact, members } = req.body;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : ''; // Path to uploaded image
+    const db = readDb();
+
+    if (!name || !description) {
+        return res.status(400).json({ message: 'Club name and description are required' });
+    }
+
+    const newClub = {
+        id: db.clubs.length ? Math.max(...db.clubs.map(c => c.id)) + 1 : 1, // Simple ID generation
+        name,
+        description,
+        category: category || 'General',
+        contact: contact || '',
+        imageUrl,
+        members: members ? JSON.parse(members) : [], // Ensure members is an array
+        creatorId: req.user.id, // Store the ID of the user who created the club (must be an admin)
+        announcements: [], // Initialize empty announcements array
+        chatMessages: [], // Initialize empty chat messages array
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    db.clubs.push(newClub);
+    writeDb(db);
+    res.status(201).json({ message: 'Club created successfully', club: newClub });
+});
+
+// Get all clubs (Publicly accessible)
+app.get('/api/clubs', (req, res) => {
+    const db = readDb();
+    res.status(200).json(db.clubs);
+});
+
+// Get a single club by ID, including its creator's username and members' full details
+app.get('/api/clubs/:id/details', authenticateToken, (req, res) => { // Authenticated to ensure user is logged in
+    const clubId = parseInt(req.params.id);
+    const db = readDb();
+    const club = db.clubs.find(c => c.id === clubId);
+
+    if (!club) {
+        return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Get creator's username
+    const creator = db.users.find(u => u.id === club.creatorId);
+    const creatorUsername = creator ? creator.username : 'Unknown';
+
+    // Get full details for members
+    const detailedMembers = [];
+    if (club.members && club.members.length > 0) {
+        club.members.forEach(memberId => {
+            const member = db.users.find(u => u.id === memberId);
+            if (member) {
+                detailedMembers.push({ id: member.id, username: member.username, role: member.role, profilePictureUrl: member.profilePictureUrl || null });
+            }
+        });
+    }
+
+    // Return club details with creator's username and detailed members
+    res.status(200).json({
+        ...club,
+        creatorUsername: creatorUsername,
+        members: detailedMembers // Override members with detailed objects
+    });
+});
+
+
+// Update a club (Admin or Superadmin only)
+app.put('/api/clubs/:id', authenticateToken, authorizeAdmin, upload.single('image'), (req, res) => {
+    const clubId = parseInt(req.params.id);
+    const { name, description, category, contact, members, existingImageUrl } = req.body;
+    let newImageUrl = req.file ? `/uploads/${req.file.filename}` : existingImageUrl;
+
+    const db = readDb();
+    const clubIndex = db.clubs.findIndex(c => c.id === clubId);
+
+    if (clubIndex !== -1) {
+        // If a new file is uploaded and an old image path exists, delete the old file
+        if (req.file && db.clubs[clubIndex].imageUrl) {
+            const oldImagePath = path.join(__dirname, db.clubs[clubIndex].imageUrl);
+            if (fs.existsSync(oldImagePath)) {
+                fs.unlink(oldImagePath, (err) => {
+                    if (err) console.error('Error deleting old image:', err);
+                });
+            }
+        }
+
+        db.clubs[clubIndex] = {
+            ...db.clubs[clubIndex],
+            name: name || db.clubs[clubIndex].name,
+            description: description || db.clubs[clubIndex].description,
+            category: category || db.clubs[clubIndex].category,
+            contact: contact || db.clubs[clubIndex].contact,
+            imageUrl: newImageUrl,
+            // Ensure members array is parsed correctly if updated via form (e.g., from a hidden input)
+            members: members ? JSON.parse(members) : db.clubs[clubIndex].members,
+            updatedAt: new Date().toISOString()
+        };
+        writeDb(db);
+        res.status(200).json({ message: 'Club updated successfully', club: db.clubs[clubIndex] });
+    } else {
+        res.status(404).json({ message: 'Club not found' });
+    }
+});
+
+
+// Delete a club (Admin or Superadmin only)
+app.delete('/api/clubs/:id', authenticateToken, authorizeAdmin, (req, res) => {
+    const clubId = parseInt(req.params.id);
+    const db = readDb();
+    const initialLength = db.clubs.length;
+
+    const clubToDelete = db.clubs.find(c => c.id === clubId);
+
+    db.clubs = db.clubs.filter(c => c.id !== clubId);
+
+    if (db.clubs.length < initialLength) {
+        if (clubToDelete && clubToDelete.imageUrl) {
+            const imagePath = path.join(__dirname, clubToDelete.imageUrl);
+            if (fs.existsSync(imagePath)) {
+                fs.unlink(imagePath, (err) => {
+                    if (err) console.error('Error deleting club image file:', err);
+                });
+            }
+        }
+        writeDb(db);
+        res.status(200).json({ message: 'Club deleted successfully' });
+    } else {
+        res.status(404).json({ message: 'Club not found' });
+    }
+});
+
+
+// --- ANNOUNCEMENT ROUTES ---
+
+// Post an announcement (Admin or Superadmin, but only if they are the club creator)
+app.post('/api/clubs/:id/announcements', authenticateToken, authorizeAdmin, (req, res) => {
+    const clubId = parseInt(req.params.id);
+    const userId = req.user.id;
+    const { message } = req.body;
+    const db = readDb();
+
+    const club = db.clubs.find(c => c.id === clubId);
+    if (!club) {
+        return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Only allow the club creator (admin or superadmin) to post announcements
+    if (club.creatorId !== userId) {
+        return res.status(403).json({ message: 'Only the club creator can post announcements.' });
+    }
+
+    if (!message || message.trim() === '') {
+        return res.status(400).json({ message: 'Announcement message cannot be empty.' });
+    }
+
+    const newAnnouncement = {
+        id: club.announcements.length ? Math.max(...club.announcements.map(a => a.id)) + 1 : 1,
+        userId: userId,
+        username: req.user.username, // Get username from token payload
+        message: message.trim(),
+        timestamp: new Date().toISOString()
+    };
+
+    club.announcements.push(newAnnouncement);
+    writeDb(db);
+    res.status(201).json({ message: 'Announcement posted successfully', announcement: newAnnouncement });
+});
+
+// Get announcements for a club (Authenticated, superadmin can always view)
+app.get('/api/clubs/:id/announcements', authenticateToken, (req, res) => {
+    const clubId = parseInt(req.params.id);
+    const db = readDb();
+    const club = db.clubs.find(c => c.id === clubId);
+
+    if (!club) {
+        return res.status(404).json({ message: 'Club not found' });
+    }
+    // Sort by timestamp in descending order (newest first)
+    const sortedAnnouncements = (club.announcements || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    res.status(200).json(sortedAnnouncements);
+});
+
+// --- CHAT ROUTES ---
+
+// Post a chat message (Members or Superadmin can chat)
+app.post('/api/clubs/:id/chat', authenticateToken, (req, res) => {
+    const clubId = parseInt(req.params.id);
+    const userId = req.user.id;
+    const { message } = req.body;
+    const db = readDb();
+
+    const club = db.clubs.find(c => c.id === clubId);
+    if (!club) {
+        return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Superadmin can chat in any club. Regular users/admins must be members.
+    if (req.user.role !== 'superadmin' && (!club.members || !club.members.includes(userId))) {
+        return res.status(403).json({ message: 'You must be a member of this club to chat, or be a Super Admin.' });
+    }
+
+    if (!message || message.trim() === '') {
+        return res.status(400).json({ message: 'Chat message cannot be empty.' });
+    }
+
+    const newChatMessage = {
+        id: club.chatMessages.length ? Math.max(...club.chatMessages.map(m => m.id)) + 1 : 1,
+        userId: userId,
+        username: req.user.username, // Get username from token payload
+        message: message.trim(),
+        timestamp: new Date().toISOString()
+    };
+
+    club.chatMessages.push(newChatMessage);
+    writeDb(db);
+    res.status(201).json({ message: 'Chat message sent successfully', chatMessage: newChatMessage });
+});
+
+// Get chat messages for a club (Members or Superadmin can view)
+app.get('/api/clubs/:id/chat', authenticateToken, (req, res) => {
+    const clubId = parseInt(req.params.id);
+    const userId = req.user.id; // Get user ID from authenticated token
+    const db = readDb();
+    const club = db.clubs.find(c => c.id === clubId);
+
+    if (!club) {
+        return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Superadmin can view chat in any club. Regular users/admins must be members.
+    if (req.user.role !== 'superadmin' && (!club.members || !club.members.includes(userId))) {
+        return res.status(403).json({ message: 'You must be a member of this club to view chat, or be a Super Admin.' });
+    }
+
+    // Sort by timestamp in ascending order (oldest first)
+    const sortedChatMessages = (club.chatMessages || []).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    res.status(200).json(sortedChatMessages);
+});
+
+
+// --- ADMIN/SUPERADMIN MANAGEMENT ROUTES (Protected) ---
+
+// Get all users (for admin/superadmin management)
+app.get('/api/admin/users', authenticateToken, authorizeAdmin, (req, res) => {
+    const db = readDb();
+    // Return users without their hashed passwords for security
+    const usersWithoutPasswords = db.users.map(({ password, ...rest }) => rest);
+    res.status(200).json(usersWithoutPasswords);
+});
+
+// Promote a user to admin role (Admin or Superadmin can do this)
+app.post('/api/admin/promote', authenticateToken, authorizeAdmin, (req, res) => {
+    const { userId } = req.body;
+    const db = readDb();
+
+    const userToPromote = db.users.find(u => u.id === userId);
+
+    if (!userToPromote) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (userToPromote.role === 'admin' || userToPromote.role === 'superadmin') {
+        return res.status(400).json({ message: 'User is already an admin or super admin.' });
+    }
+
+    userToPromote.role = 'admin';
+    writeDb(db);
+    res.status(200).json({ message: `User ${userToPromote.username} promoted to admin.` });
+});
+
+// Demote an admin to user role (Admin or Superadmin can do this, with restrictions)
+app.post('/api/admin/demote', authenticateToken, authorizeAdmin, (req, res) => {
+    const { userId } = req.body;
+    const db = readDb();
+
+    const userToDemote = db.users.find(u => u.id === userId);
+
+    if (!userToDemote) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Cannot demote yourself
+    if (userToDemote.id === req.user.id) {
+        return res.status(403).json({ message: 'You cannot demote yourself.' });
+    }
+
+    // Cannot demote a superadmin if you are only an admin
+    if (userToDemote.role === 'superadmin' && req.user.role === 'admin') {
+        return res.status(403).json({ message: 'Admins cannot demote Super Admins.' });
+    }
+
+    // If user is already a regular user
+    if (userToDemote.role === 'user') {
+        return res.status(400).json({ message: 'User is not an admin to be demoted.' });
+    }
+
+    userToDemote.role = 'user';
+    writeDb(db);
+    res.status(200).json({ message: `User ${userToDemote.username} demoted to user.` });
+});
+
+// Delete a user (Admin can delete users, Superadmin can delete users AND admins)
+app.delete('/api/admin/users/:id', authenticateToken, authorizeAdmin, (req, res) => {
+    const userIdToDelete = parseInt(req.params.id);
+    const currentUserId = req.user.id; // The ID of the user performing the deletion
+    const currentUserRole = req.user.role;
+    const db = readDb();
+
+    const userIndexToDelete = db.users.findIndex(u => u.id === userIdToDelete);
+
+    if (userIndexToDelete === -1) {
+        return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const userToDelete = db.users[userIndexToDelete];
+
+    // Prevent deleting self
+    if (userToDelete.id === currentUserId) {
+        return res.status(403).json({ message: 'You cannot delete your own account.' });
+    }
+
+    // Admins cannot delete other admins or superadmins
+    if (currentUserRole === 'admin' && (userToDelete.role === 'admin' || userToDelete.role === 'superadmin')) {
+        return res.status(403).json({ message: 'Admins cannot delete other admins or Super Admins.' });
+    }
+
+    // Superadmins can delete admins, but not other superadmins
+    if (currentUserRole === 'superadmin' && userToDelete.role === 'superadmin') {
+        return res.status(403).json({ message: 'Super Admins cannot delete other Super Admins.' });
+    }
+
+    // Before deleting the user, remove them from any clubs they are members of
+    db.clubs.forEach(club => {
+        if (club.members && club.members.includes(userIdToDelete)) {
+            club.members = club.members.filter(memberId => memberId !== userIdToDelete);
+        }
+    });
+
+    // If the user being deleted created any clubs, handle their creatorId, announcements, and chat messages.
+    db.clubs.forEach(club => {
+        if (club.creatorId === userIdToDelete) {
+            club.creatorId = null; // Set creator to null (or a specific 'deleted_user_id')
+            // Filter out announcements and chat messages by the deleted user
+            club.announcements = club.announcements.filter(ann => ann.userId !== userIdToDelete);
+            club.chatMessages = club.chatMessages.filter(chat => chat.userId !== userIdToDelete);
+        }
+    });
+
+    // Delete the user's profile picture file if it exists
+    if (userToDelete.profilePictureUrl) {
+        const imagePath = path.join(__dirname, userToDelete.profilePictureUrl);
+        if (fs.existsSync(imagePath)) {
+            fs.unlink(imagePath, (err) => {
+                if (err) console.error('Error deleting user profile picture:', err);
+            });
+        }
+    }
+
+    // Remove the user from the users array
+    db.users.splice(userIndexToDelete, 1);
+    writeDb(db);
+    res.status(200).json({ message: `User "${userToDelete.username}" and associated data deleted successfully.` });
+});
+
+
+// NEW SUPERADMIN POWER: Change any user's password
+app.put('/api/superadmin/users/:id/password-reset', authenticateToken, authorizeSuperAdmin, async (req, res) => {
+    const userIdToReset = parseInt(req.params.id);
+    const { newPassword } = req.body;
+    const db = readDb();
+
+    const userIndex = db.users.findIndex(u => u.id === userIdToReset);
+
+    if (userIndex === -1) {
+        return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const userToUpdate = db.users[userIndex];
+
+    if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: 'New password must be at least 6 characters long.' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        userToUpdate.password = hashedPassword;
+        userToUpdate.updatedAt = new Date().toISOString();
+        writeDb(db);
+        res.status(200).json({ message: `Password for user "${userToUpdate.username}" reset successfully.` });
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        res.status(500).json({ message: 'Server error during password reset.' });
+    }
+});
+
+// NEW SUPERADMIN POWER: Change any user's username
+app.put('/api/superadmin/users/:id/username-change', authenticateToken, authorizeSuperAdmin, async (req, res) => {
+    const userIdToChange = parseInt(req.params.id);
+    const { newUsername } = req.body;
+    const db = readDb();
+
+    const userIndex = db.users.findIndex(u => u.id === userIdToChange);
+
+    if (userIndex === -1) {
+        return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const userToUpdate = db.users[userIndex];
+
+    if (!newUsername || newUsername.trim() === '') {
+        return res.status(400).json({ message: 'New username cannot be empty.' });
+    }
+
+    // Check if the new username already exists for another user
+    if (db.users.some(u => u.username.toLowerCase() === newUsername.toLowerCase() && u.id !== userIdToChange)) {
+        return res.status(409).json({ message: 'Username already taken by another user.' });
+    }
+
+    userToUpdate.username = newUsername.trim();
+    userToUpdate.updatedAt = new Date().toISOString();
+    writeDb(db);
+    res.status(200).json({ message: `Username for user ID ${userIdToChange} changed to "${newUsername}" successfully.` });
+});
+
+
+// --- Placeholder for Messaging System (Requires Frontend & More Complex Backend) ---
+// The request mentions superadmin can message admins publicly and privately.
+// This is a significant feature that would require:
+// 1. A new data structure in db.json for messages (e.g., a 'messages' array in clubs, or a global 'conversations' array).
+// 2. API endpoints for sending messages (e.g., /api/messages/send-to-admin, /api/messages/send-private-to-user).
+// 3. API endpoints for fetching messages.
+// 4. Client-side UI to compose, send, and display these messages.
+// This is beyond the scope of a single "fix all" turn for existing features.
+// The existing chat within clubs allows superadmins to chat publicly in clubs they access.
+// If a dedicated admin-to-admin or private messaging system is desired, it needs
+// further design and implementation steps.
+// --- End Placeholder ---
+
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Open http://localhost:${PORT}/index.html in your browser.`);
+    console.log(`Initial Super Admin Username: ${INITIAL_SUPERADMIN_USERNAME}`);
+    console.log(`Initial Super Admin Password: ${INITIAL_SUPERADMIN_PASSWORD}`);
+    console.log('Register this account first to gain superadmin privileges.');
+});
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+dashboard
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - Hillrange Clubs</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="font-inter bg-gray-100 flex flex-col min-h-screen">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Hillrange Clubs</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="index.html" class="hover:text-blue-200">Home</a></li>
+                    <li><a href="club.html" class="hover:text-blue-200">Clubs</a></li>
+                    <li><a href="login.html" class="hover:text-blue-200 hidden" id="nav-login-link">Login</a></li>
+                    <li><a href="register.html" class="hover:text-blue-200 hidden" id="nav-register-link">Register</a></li>
+                    <li><a href="./dashboard.html" class="hover:text-blue-200" id="nav-dashboard-link">Dashboard</a></li>
+                    <li><a href="./create-club.html" class="hover:text-blue-200 hidden" id="nav-create-club-link">Create Club</a></li>
+                    <li><a href="./manage-admins.html" class="hover:text-blue-200 hidden" id="nav-manage-admins-link">Manage Admins</a></li>
+                    <li><a href="#" class="hover:text-blue-200" id="nav-logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 flex-grow">
+        <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">My Dashboard</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- User Profile Card -->
+            <div class="md:col-span-1 bg-white p-6 rounded-lg shadow-lg flex flex-col items-center justify-center text-center">
+                <div class="w-32 h-32 bg-blue-200 rounded-full flex items-center justify-center text-blue-800 text-5xl font-bold mb-4 overflow-hidden border-4 border-blue-400 relative">
+                    <!-- Profile Picture Element - src will be set by JavaScript -->
+                    <!-- Initially hidden, will be shown if a picture is available -->
+                    <img id="userProfilePicture" src="https://placehold.co/100x100/cccccc/333333?text=User" alt="Profile Picture" class="w-full h-full object-cover hidden">
+                    
+                    <!-- Initials Placeholder - shown by default, hidden if a picture is available -->
+                    <span id="profileInitials">JD</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2" id="dashboardUsername">Welcome, User!</h3>
+                <p class="text-gray-600 mb-4" id="dashboardRole">Role: User</p>
+                <button id="editProfileBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 flex items-center gap-2">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </button>
+            </div>
+
+            <!-- Quick Stats / Overview (Placeholder for future features) -->
+            <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col justify-between">
+                    <div>
+                        <i class="fas fa-users text-blue-500 text-3xl mb-3"></i>
+                        <h4 class="text-xl font-semibold text-gray-800">Total Clubs</h4>
+                        <p class="text-gray-600 text-2xl font-bold" id="totalClubsCount">0</p>
+                    </div>
+                    <a href="./club.html" class="text-blue-600 hover:underline mt-4 self-end">View All Clubs &rarr;</a>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col justify-between">
+                    <div>
+                        <i class="fas fa-heart text-red-500 text-3xl mb-3"></i>
+                        <h4 class="text-xl font-semibold text-gray-800">My Joined Clubs</h4>
+                        <p class="text-gray-600 text-2xl font-bold" id="joinedClubsCount">0</p>
+                    </div>
+                    <a href="#clubListSection" class="text-blue-600 hover:underline mt-4 self-end">Manage My Memberships &rarr;</a>
+                </div>
+                <!-- Admin specific actions (if applicable) -->
+                <div id="adminActions" class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 hidden">
+                    <button id="adminCreateClubBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-plus-circle"></i> Create New Club
+                    </button>
+                    <button id="adminManageAdminsBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-user-shield"></i> Manage Admins/Users
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <section id="clubListSection" class="mt-8">
+            <h3 class="text-2xl font-semibold text-gray-800 mb-4 text-center">Available Clubs</h3>
+            <div id="loadingMessage" class="text-center text-gray-600 text-lg hidden">Loading clubs...</div>
+            <div id="errorMessage" class="text-center text-red-500 text-lg hidden">Failed to load clubs. Please try again later.</div>
+
+            <div id="clubList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Club cards will be dynamically loaded here by clubs.js -->
+            </div>
+            <p id="noClubsMessage" class="text-center text-gray-600 text-lg hidden mt-8">No clubs found yet. Be the first to create one!</p>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 text-center mt-8">
+        <div class="container mx-auto">
+            <p>&copy; 2025 Hillrange Clubs. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/clubs.js"></script>
+    <script src="./js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const userRole = localStorage.getItem('userRole');
+            const username = localStorage.getItem('username'); // Get username from local storage
+
+            const navLoginLink = document.getElementById('nav-login-link');
+            const navRegisterLink = document.getElementById('nav-register-link');
+            const navDashboardLink = document.getElementById('nav-dashboard-link');
+            const navCreateClubLink = document.getElementById('nav-create-club-link');
+            const navManageAdminsLink = document.getElementById('nav-manage-admins-link');
+            const navLogoutLink = document.getElementById('nav-logout-link');
+
+            const dashboardUsername = document.getElementById('dashboardUsername');
+            const dashboardRole = document.getElementById('dashboardRole');
+            const profileInitials = document.getElementById('profileInitials');
+            const adminActionsDiv = document.getElementById('adminActions');
+            const adminCreateClubBtn = document.getElementById('adminCreateClubBtn');
+            const adminManageAdminsBtn = document.getElementById('adminManageAdminsBtn');
+            const editProfileBtn = document.getElementById('editProfileBtn');
+
+            if (token) {
+                // If logged in, hide login/register and show dashboard/logout
+                navLoginLink.classList.add('hidden');
+                navRegisterLink.classList.add('hidden');
+                navDashboardLink.classList.remove('hidden');
+                navLogoutLink.classList.remove('hidden');
+
+                // Update dashboard profile info
+                if (username) {
+                    dashboardUsername.textContent = `Welcome, ${username}!`;
+                    profileInitials.textContent = username.charAt(0).toUpperCase(); // First letter for initials
+                }
+                if (userRole) {
+                    dashboardRole.textContent = `Role: ${userRole.charAt(0).toUpperCase() + userRole.slice(1)}`;
+                }
+
+                // Show admin links and buttons if user is an admin
+                if (userRole === 'admin'||userRole === 'superadmin') {
+                    navCreateClubLink.classList.remove('hidden');
+                    navManageAdminsLink.classList.remove('hidden');
+                    adminActionsDiv.classList.remove('hidden'); // Show admin action buttons
+                } else {
+                    navCreateClubLink.classList.add('hidden');
+                    navManageAdminsLink.classList.add('hidden');
+                    adminActionsDiv.classList.add('hidden');
+                }
+            } else {
+                // If not logged in, ensure login/register are visible and hide admin links
+                navLoginLink.classList.remove('hidden');
+                navRegisterLink.classList.remove('hidden');
+                navDashboardLink.classList.add('hidden'); // Dashboard might be accessible to non-logged in to view clubs, but actions would be restricted.
+                navCreateClubLink.classList.add('hidden');
+                navManageAdminsLink.classList.add('hidden');
+                navLogoutLink.classList.add('hidden');
+                // Redirect to login if not logged in to view dashboard content
+                alert('Please log in to view your dashboard.');
+                window.location.href = 'login.html';
+                return; // Stop execution if redirecting
+            }
+
+            // Handle logout
+            navLogoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('userRole'); // Clear user role too
+                localStorage.removeItem('username'); // Clear username
+                window.location.href = 'index.html'; // Redirect to home page
+            });
+
+            // Handle admin action button clicks
+            if (adminCreateClubBtn) {
+                adminCreateClubBtn.addEventListener('click', () => {
+                    window.location.href = 'create-club.html';
+                });
+            }
+            if (adminManageAdminsBtn) {
+                adminManageAdminsBtn.addEventListener('click', () => {
+                    window.location.href = 'manage-admins.html';
+                });
+            }
+            // Handle edit profile button click (placeholder for now)
+            if (editProfileBtn) {
+                editProfileBtn.addEventListener('click', () => {
+                    window.location.href = 'edit-profile.html';
+                });
+            }
+
+            // Load clubs when the dashboard page loads
+            loadClubs();
+            loadDashboardContent()
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+manage-admin
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Admins - Hillrange Clubs</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons (if you want icons on buttons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="font-inter bg-gray-100 flex flex-col min-h-screen">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Hillrange Clubs</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="index.html" class="hover:text-blue-200">Home</a></li>
+                    <li><a href="dashboard.html" class="hover:text-blue-200">Clubs</a></li>
+                    <li><a href="login.html" class="hover:text-blue-200 hidden" id="nav-login-link">Login</a></li>
+                    <li><a href="register.html" class="hover:text-blue-200 hidden" id="nav-register-link">Register</a></li>
+                    <li><a href="./dashboard.html" class="hover:text-blue-200" id="nav-dashboard-link">Dashboard</a></li>
+                    <li><a href="./create-club.html" class="hover:text-blue-200 hidden" id="nav-create-club-link">Create Club</a></li>
+                    <li><a href="./manage-admins.html" class="hover:text-blue-200 hidden" id="nav-manage-admins-link">Manage Admins</a></li>
+                    <li><a href="#" class="hover:text-blue-200" id="nav-logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 flex-grow">
+        <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Manage User Roles</h2>
+
+        <div id="loadingMessage" class="text-center text-gray-600 text-lg hidden">Loading users...</div>
+        <div id="errorMessage" class="text-center text-red-500 text-lg hidden">Failed to load users. Please try again later.</div>
+
+        <div id="userList" class="bg-white p-6 rounded-lg shadow-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <!-- User rows will be dynamically loaded here by admin.js -->
+                </tbody>
+            </table>
+            <p id="noUsersMessage" class="text-center text-gray-600 text-lg hidden mt-4">No users found.</p>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 text-center mt-8">
+        <div class="container mx-auto">
+            <p>&copy; 2025 Hillrange Clubs. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for token and user role on page load to adjust navigation and authorize access
+            const token = localStorage.getItem('token');
+            const userRole = localStorage.getItem('userRole');
+
+            const navLoginLink = document.getElementById('nav-login-link');
+            const navRegisterLink = document.getElementById('nav-register-link');
+            const navDashboardLink = document.getElementById('nav-dashboard-link');
+            const navCreateClubLink = document.getElementById('nav-create-club-link');
+            const navManageAdminsLink = document.getElementById('nav-manage-admins-link');
+            const navLogoutLink = document.getElementById('nav-logout-link');
+
+            if (token) {
+                // If logged in, hide login/register and show dashboard/logout
+                navLoginLink.classList.add('hidden');
+                navRegisterLink.classList.add('hidden');
+                navDashboardLink.classList.remove('hidden');
+                navLogoutLink.classList.remove('hidden');
+
+                if (userRole === 'admin') {
+                    navCreateClubLink.classList.remove('hidden');
+                    navManageAdminsLink.classList.remove('hidden');
+                    // Load users if admin
+                    loadUsersForAdmin(); // This function is in admin.js
+                } else {
+                    // If not admin, redirect away from this page
+                    alert('You do not have permission to view this page.');
+                    window.location.href = 'dashboard.html';
+                }
+            } else {
+                // If not logged in, redirect to login
+                alert('Please log in to access this page.');
+                window.location.href = 'login.html';
+            }
+
+            // Handle logout
+            navLogoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('userRole'); // Clear user role too
+                localStorage.removeItem('username'); // Clear username
+                localStorage.removeItem('userId'); // Also clear userId
+                window.location.href = 'index.html'; // Redirect to home page
+            });
+        });
+    </script>
+</body>
+</html>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ // // public/js/utils.js
+
+// // API Base URL - Declared once for the entire application
+// const API_BASE_URL = window.location.origin;
+
+// /**
+//  * Simple escape HTML function to prevent XSS.
+//  * @param {string} str - The string to escape.
+//  * @returns {string} The escaped string.
+//  */
+// function escapeHTML(str) {
+//     if (typeof str !== 'string') {
+//         return ''; // Or handle non-string input as needed
+//     }
+//     const div = document.createElement('div');
+//     div.appendChild(document.createTextNode(str));
+//     return div.innerHTML;
+// }
+
+// /**
+//  * Handles common authentication errors by clearing local storage and redirecting to login.
+//  * @param {number} statusCode - The HTTP status code.
+//  */
+// function handleAuthError(statusCode) {
+//     if (statusCode === 401 || statusCode === 403) {
+//         alert('Session expired or unauthorized. Please log in again.');
+//         localStorage.removeItem('token');
+//         localStorage.removeItem('userRole');
+//         localStorage.removeItem('username');
+//         localStorage.removeItem('userId');
+//         window.location.href = 'login.html';
+//     }
+// }
+
+// // You can add other global utility functions here
+
+// function getToken() {
+//     return localStorage.getItem('token');
+// }
+
+// /**
+//  * Retrieves the user's role from localStorage.
+//  * @returns {string|null} The user's role (e.g., 'user', 'admin', 'superadmin') or null if not found.
+//  */
+// function getUserRole() {
+//     return localStorage.getItem('userRole');
+// }
+
+// /**
+//  * Checks if the current user is logged in.
+//  * @returns {boolean} True if a token exists, false otherwise.
+//  */
+// function isLoggedIn() {
+//     return !!getToken();
+// }
+
+// /**
+//  * Checks if the current user is an admin or superadmin.
+//  * @returns {boolean} True if the user has 'admin' or 'superadmin' role, false otherwise.
+//  */
+// function isAdminOrSuperAdmin() {
+//     const role = getUserRole();
+//     return role === 'admin' || role === 'superadmin';
+// }
+
+// /**
+//  * Checks if the current user is a superadmin.
+//  * @returns {boolean} True if the user has 'superadmin' role, false otherwise.
+//  */
+// function isSuperAdmin() {
+//     return getUserRole() === 'superadmin';
+// }
+
+// /**
+//  * Fetches user data from the server.
+//  * @param {number} userId - The ID of the user to fetch.
+//  * @returns {Promise<Object|null>} User data or null if an error occurs.
+//  */
+// async function fetchUserData(userId) {
+//     const token = getToken();
+//     if (!token) {
+//         console.error('No token found. User not authenticated.');
+//         return null;
+//     }
+
+//     try {
+//         const response = await fetch(`/api/users/${userId}`, {
+//             headers: {
+//                 'Authorization': `Bearer ${token}`
+//             }
+//         });
+//         if (!response.ok) {
+//             if (response.status === 403) {
+//                 console.error('Access denied to user data.');
+//                 // Optionally redirect to login if token is invalid/expired
+//                 // localStorage.clear();
+//                 // window.location.href = 'login.html';
+//             }
+//             throw new Error(`HTTP error! status: ${response.status}`);
+//         }
+//         const data = await response.json();
+//         return data;
+//     } catch (error) {
+//         console.error('Error fetching user data:', error);
+//         return null;
+//     }
+// }
+
+// /**
+//  * Generates an initial for a user based on their username.
+//  * @param {string} username - The username of the user.
+//  * @returns {string} The first letter of the username, capitalized.
+//  */
+// function getInitial(username) {
+//     return username ? username.charAt(0).toUpperCase() : '?';
+// }
+
+// /**
+//  * Displays a toast notification.
+//  * @param {string} message - The message to display.
+//  * @param {string} type - 'success', 'error', 'info', or 'warning'.
+//  */
+// function showToast(message, type = 'info') {
+//     const toastContainer = document.getElementById('toast-container');
+//     if (!toastContainer) {
+//         const body = document.querySelector('body');
+//         const container = document.createElement('div');
+//         container.id = 'toast-container';
+//         container.className = 'fixed bottom-4 right-4 flex flex-col space-y-2 z-50';
+//         body.appendChild(container);
+//         toastContainer = document.getElementById('toast-container');
+//     }
+
+//     const toast = document.createElement('div');
+//     toast.className = `p-3 rounded-lg shadow-md text-white flex items-center space-x-2 transition-all duration-300 transform translate-x-full opacity-0`;
+
+//     let bgColor = '';
+//     let iconClass = '';
+
+//     switch (type) {
+//         case 'success':
+//             bgColor = 'bg-green-500';
+//             iconClass = 'fas fa-check-circle';
+//             break;
+//         case 'error':
+//             bgColor = 'bg-red-500';
+//             iconClass = 'fas fa-times-circle';
+//             break;
+//         case 'warning':
+//             bgColor = 'bg-yellow-500';
+//             iconClass = 'fas fa-exclamation-triangle';
+//             break;
+//         case 'info':
+//         default:
+//             bgColor = 'bg-blue-500';
+//             iconClass = 'fas fa-info-circle';
+//             break;
+//     }
+
+//     toast.classList.add(bgColor);
+//     toast.innerHTML = `<i class="${iconClass}"></i><span>${message}</span>`;
+//     toastContainer.appendChild(toast);
+
+//     // Animate in
+//     setTimeout(() => {
+//         toast.classList.remove('translate-x-full', 'opacity-0');
+//         toast.classList.add('translate-x-0', 'opacity-100');
+//     }, 100);
+
+//     // Animate out and remove
+//     setTimeout(() => {
+//         toast.classList.remove('translate-x-0', 'opacity-100');
+//         toast.classList.add('translate-x-full', 'opacity-0');
+//         toast.addEventListener('transitionend', () => toast.remove());
+//     }, 5000); // Toast disappears after 5 seconds
+// }
+
+// // Add a toast container to the body if it doesn't exist
+// document.addEventListener('DOMContentLoaded', () => {
+//     if (!document.getElementById('toast-container')) {
+//         const body = document.querySelector('body');
+//         const container = document.createElement('div');
+//         container.id = 'toast-container';
+//         container.className = 'fixed bottom-4 right-4 flex flex-col space-y-2 z-50';
+//         body.appendChild(container);
+//     }
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// public/js/utils.js
+
+// Global API_BASE_URL: Dynamically set based on the current domain
+const API_BASE_URL = window.location.origin;
+
+/**
+ * Retrieves the JWT token from localStorage.
+ * @returns {string|null} The JWT token or null if not found.
+ */
+function getToken() {
+    return localStorage.getItem('token');
+}
+
+/**
+ * Retrieves the user's role from localStorage.
+ * @returns {string|null} The user's role (e.g., 'user', 'admin', 'superadmin') or null if not found.
+ */
+function getUserRole() {
+    return localStorage.getItem('userRole');
+}
+
+/**
+ * Retrieves the user's ID from localStorage.
+ * @returns {number|null} The user's ID or null if not found.
+ */
+function getUserId() {
+    const userId = localStorage.getItem('userId');
+    return userId ? parseInt(userId) : null;
+}
+
+/**
+ * Retrieves the user's username from localStorage.
+ * @returns {string|null} The user's username or null if not found.
+ */
+function getUsername() {
+    return localStorage.getItem('username');
+}
+
+
+/**
+ * Checks if the current user is logged in.
+ * @returns {boolean} True if a token exists, false otherwise.
+ */
+function isLoggedIn() {
+    return !!getToken();
+}
+
+/**
+ * Checks if the current user is an 'admin' or 'superadmin'.
+ * @returns {boolean} True if the user has 'admin' or 'superadmin' role, false otherwise.
+ */
+function isAdminOrSuperAdmin() {
+    const role = getUserRole();
+    return role === 'admin' || role === 'superadmin';
+}
+
+/**
+ * Checks if the current user is a 'superadmin'.
+ * @returns {boolean} True if the user has 'superadmin' role, false otherwise.
+ */
+function isSuperAdmin() {
+    return getUserRole() === 'superadmin';
+}
+
+/**
+ * Fetches user data from the server.
+ * @param {number} userId - The ID of the user to fetch.
+ * @returns {Promise<Object|null>} User data or null if an error occurs.
+ */
+async function fetchUserData(userId) {
+    const token = getToken();
+    if (!token) {
+        console.error('No token found. User not authenticated.');
+        return null;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) {
+            // No direct alert here, handleAuthError will be called if needed
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        // handleAuthError(error.response ? error.response.status : null); // Only if response is available
+        return null;
+    }
+}
+
+/**
+ * Generates an initial for a user based on their username.
+ * @param {string} username - The username of the user.
+ * @returns {string} The first letter of the username, capitalized.
+ */
+function getInitial(username) {
+    return username ? username.charAt(0).toUpperCase() : '?';
+}
+
+/**
+ * Basic HTML escaping to prevent XSS attacks.
+ * @param {string} str - The string to escape.
+ * @returns {string} The escaped string.
+ */
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+/**
+ * Displays a toast notification.
+ * @param {string} message - The message to display.
+ * @param {string} type - 'success', 'error', 'info', or 'warning'.
+ */
+function showToast(message, type = 'info') {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        const body = document.querySelector('body');
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'fixed bottom-4 right-4 flex flex-col space-y-2 z-50';
+        body.appendChild(container);
+        toastContainer = document.getElementById('toast-container');
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `p-3 rounded-lg shadow-md text-white flex items-center space-x-2 transition-all duration-300 transform translate-x-full opacity-0`;
+
+    let bgColor = '';
+    let iconClass = '';
+
+    switch (type) {
+        case 'success':
+            bgColor = 'bg-green-500';
+            iconClass = 'fas fa-check-circle';
+            break;
+        case 'error':
+            bgColor = 'bg-red-500';
+            iconClass = 'fas fa-times-circle';
+            break;
+        case 'warning':
+            bgColor = 'bg-yellow-500';
+            iconClass = 'fas fa-exclamation-triangle';
+            break;
+        case 'info':
+        default:
+            bgColor = 'bg-blue-500';
+            iconClass = 'fas fa-info-circle';
+            break;
+    }
+
+    toast.classList.add(bgColor);
+    toast.innerHTML = `<i class="${iconClass}"></i><span>${escapeHTML(message)}</span>`; // Escape message
+    toastContainer.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full', 'opacity-0');
+        toast.classList.add('translate-x-0', 'opacity-100');
+    }, 100);
+
+    // Animate out and remove
+    setTimeout(() => {
+        toast.classList.remove('translate-x-0', 'opacity-100');
+        toast.classList.add('translate-x-full', 'opacity-0');
+        toast.addEventListener('transitionend', () => toast.remove());
+    }, 5000); // Toast disappears after 5 seconds
+}
+
+/**
+ * Handles authentication-related errors, e.g., redirecting on 401/403.
+ * @param {number} status - The HTTP status code.
+ */
+function handleAuthError(status) {
+    if (status === 401 || status === 403) {
+        showToast('Session expired or unauthorized. Please log in again.', 'error');
+        localStorage.clear(); // Clear token and user info
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 1500);
+    }
+}
+
+// Add a toast container to the body if it doesn't exist on page load
+document.addEventListener('DOMContentLoaded', () => {
+    if (!document.getElementById('toast-container')) {
+        const body = document.querySelector('body');
+        if (body) { // Ensure body exists
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed bottom-4 right-4 flex flex-col space-y-2 z-50';
+            body.appendChild(container);
+        }
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // public/js/utils.js
+
+// // Global API_BASE_URL: Dynamically set based on the current domain
+// const API_BASE_URL = window.location.origin;
+
+// /**
+//  * Retrieves the JWT token from localStorage.
+//  * @returns {string|null} The JWT token or null if not found.
+//  */
+// function getToken() {
+//     return localStorage.getItem('token');
+// }
+
+// /**
+//  * Retrieves the user's role from localStorage.
+//  * @returns {string|null} The user's role (e.g., 'user', 'admin', 'superadmin') or null if not found.
+//  */
+// function getUserRole() {
+//     return localStorage.getItem('userRole');
+// }
+
+// /**
+//  * Retrieves the user's ID from localStorage.
+//  * @returns {number|null} The user's ID or null if not found.
+//  */
+// function getUserId() {
+//     const userId = localStorage.getItem('userId');
+//     return userId ? parseInt(userId) : null;
+// }
+
+// /**
+//  * Retrieves the user's username from localStorage.
+//  * @returns {string|null} The user's username or null if not found.
+//  */
+// function getUsername() {
+//     return localStorage.getItem('username');
+// }
+
+
+// /**
+//  * Checks if the current user is logged in.
+//  * @returns {boolean} True if a token exists, false otherwise.
+//  */
+// function isLoggedIn() {
+//     return !!getToken();
+// }
+
+// /**
+//  * Checks if the current user is an 'admin' or 'superadmin'.
+//  * @returns {boolean} True if the user has 'admin' or 'superadmin' role, false otherwise.
+//  */
+// function isAdminOrSuperAdmin() {
+//     const role = getUserRole();
+//     return role === 'admin' || role === 'superadmin';
+// }
+
+// /**
+//  * Checks if the current user is a 'superadmin'.
+//  * @returns {boolean} True if the user has 'superadmin' role, false otherwise.
+//  */
+// function isSuperAdmin() {
+//     return getUserRole() === 'superadmin';
+// }
+
+// /**
+//  * Fetches user data from the server.
+//  * @param {number} userId - The ID of the user to fetch.
+//  * @returns {Promise<Object|null>} User data or null if an error occurs.
+//  */
+// async function fetchUserData(userId) {
+//     const token = getToken();
+//     if (!token) {
+//         console.error('No token found. User not authenticated.');
+//         return null;
+//     }
+
+//     try {
+//         const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+//             headers: {
+//                 'Authorization': `Bearer ${token}`
+//             }
+//         });
+//         if (!response.ok) {
+//             // No direct alert here, handleAuthError will be called if needed
+//             throw new Error(`HTTP error! status: ${response.status}`);
+//         }
+//         const data = await response.json();
+//         return data;
+//     } catch (error) {
+//         console.error('Error fetching user data:', error);
+//         // handleAuthError(error.response ? error.response.status : null); // Only if response is available
+//         return null;
+//     }
+// }
+
+// /**
+//  * Generates an initial for a user based on their username.
+//  * @param {string} username - The username of the user.
+//  * @returns {string} The first letter of the username, capitalized.
+//  */
+// function getInitial(username) {
+//     return username ? username.charAt(0).toUpperCase() : '?';
+// }
+
+// /**
+//  * Basic HTML escaping to prevent XSS attacks.
+//  * @param {string} str - The string to escape.
+//  * @returns {string} The escaped string.
+//  */
+// function escapeHTML(str) {
+//     const div = document.createElement('div');
+//     div.appendChild(document.createTextNode(str));
+//     return div.innerHTML;
+// }
+
+// /**
+//  * Displays a toast notification.
+//  * @param {string} message - The message to display.
+//  * @param {string} type - 'success', 'error', 'info', or 'warning'.
+//  */
+// function showToast(message, type = 'info') {
+//     let toastContainer = document.getElementById('toast-container');
+//     if (!toastContainer) {
+//         const body = document.querySelector('body');
+//         const container = document.createElement('div');
+//         container.id = 'toast-container';
+//         container.className = 'fixed bottom-4 right-4 flex flex-col space-y-2 z-50';
+//         body.appendChild(container);
+//         toastContainer = document.getElementById('toast-container');
+//     }
+
+//     const toast = document.createElement('div');
+//     toast.className = `p-3 rounded-lg shadow-md text-white flex items-center space-x-2 transition-all duration-300 transform translate-x-full opacity-0`;
+
+//     let bgColor = '';
+//     let iconClass = '';
+
+//     switch (type) {
+//         case 'success':
+//             bgColor = 'bg-green-500';
+//             iconClass = 'fas fa-check-circle';
+//             break;
+//         case 'error':
+//             bgColor = 'bg-red-500';
+//             iconClass = 'fas fa-times-circle';
+//             break;
+//         case 'warning':
+//             bgColor = 'bg-yellow-500';
+//             iconClass = 'fas fa-exclamation-triangle';
+//             break;
+//         case 'info':
+//         default:
+//             bgColor = 'bg-blue-500';
+//             iconClass = 'fas fa-info-circle';
+//             break;
+//     }
+
+//     toast.classList.add(bgColor);
+//     toast.innerHTML = `<i class="${iconClass}"></i><span>${escapeHTML(message)}</span>`; // Escape message
+//     toastContainer.appendChild(toast);
+
+//     // Animate in
+//     setTimeout(() => {
+//         toast.classList.remove('translate-x-full', 'opacity-0');
+//         toast.classList.add('translate-x-0', 'opacity-100');
+//     }, 100);
+
+//     // Animate out and remove
+//     setTimeout(() => {
+//         toast.classList.remove('translate-x-0', 'opacity-100');
+//         toast.classList.add('translate-x-full', 'opacity-0');
+//         toast.addEventListener('transitionend', () => toast.remove());
+//     }, 5000); // Toast disappears after 5 seconds
+// }
+
+// /**
+//  * Handles authentication-related errors, e.g., redirecting on 401/403.
+//  * @param {number} status - The HTTP status code.
+//  */
+// function handleAuthError(status) {
+//     if (status === 401 || status === 403) {
+//         showToast('Session expired or unauthorized. Please log in again.', 'error');
+//         localStorage.clear(); // Clear token and user info
+//         setTimeout(() => {
+//             window.location.href = 'login.html';
+//         }, 1500);
+//     }
+// }
+
+// // Add a toast container to the body if it doesn't exist on page load
+// document.addEventListener('DOMContentLoaded', () => {
+//     if (!document.getElementById('toast-container')) {
+//         const body = document.querySelector('body');
+//         if (body) { // Ensure body exists
+//             const container = document.createElement('div');
+//             container.id = 'toast-container';
+//             container.className = 'fixed bottom-4 right-4 flex flex-col space-y-2 z-50';
+//             body.appendChild(container);
+//         }
+//     }
+// });

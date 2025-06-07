@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Hillrange Clubs</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="font-inter bg-gray-100 flex flex-col min-h-screen">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Hillrange Clubs</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="index.html" class="hover:text-blue-200">Home</a></li>
+                    <li><a href="club.html" class="hover:text-blue-200">Clubs</a></li>
+                    <li><a href="login.html" class="hover:text-blue-200 hidden" id="nav-login-link">Login</a></li>
+                    <li><a href="register.html" class="hover:text-blue-200 hidden" id="nav-register-link">Register</a></li>
+                    <li><a href="./dashboard.html" class="hover:text-blue-200" id="nav-dashboard-link">Dashboard</a></li>
+                    <li><a href="./create-club.html" class="hover:text-blue-200 hidden" id="nav-create-club-link">Create Club</a></li>
+                    <li><a href="./manage-admins.html" class="hover:text-blue-200 hidden" id="nav-manage-admins-link">Manage Admins</a></li>
+                    <li><a href="#" class="hover:text-blue-200" id="nav-logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 flex-grow">
+        <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">All Clubs</h2>
+
+        <div id="loadingMessage" class="text-center text-gray-600 text-lg hidden">Loading clubs...</div>
+        <div id="errorMessage" class="text-center text-red-500 text-lg hidden">Failed to load clubs. Please try again later.</div>
+
+        <div id="clubList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+        <p id="noClubsMessage" class="text-center text-gray-600 text-lg hidden mt-8">No clubs found yet. Create one if you are an admin.</p>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 text-center mt-8">
+        <div class="container mx-auto">
+            <p>&copy; 2025 Hillrange Clubs. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/clubs.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for token and user role on page load to adjust navigation and authorize access
+            const token = localStorage.getItem('token');
+            const userRole = localStorage.getItem('userRole');
+
+            const navLoginLink = document.getElementById('nav-login-link');
+            const navRegisterLink = document.getElementById('nav-register-link');
+            const navDashboardLink = document.getElementById('nav-dashboard-link');
+            const navCreateClubLink = document.getElementById('nav-create-club-link');
+            const navManageAdminsLink = document.getElementById('nav-manage-admins-link');
+            const navLogoutLink = document.getElementById('nav-logout-link');
+
+            if (token) {
+                // If logged in, hide login/register and show dashboard/logout
+                navLoginLink.classList.add('hidden');
+                navRegisterLink.classList.add('hidden');
+                navDashboardLink.classList.remove('hidden');
+                navLogoutLink.classList.remove('hidden');
+
+                if (userRole === 'admin') {
+                    navCreateClubLink.classList.remove('hidden');
+                    navManageAdminsLink.classList.remove('hidden');
+                }
+            } else {
+                // If not logged in, ensure login/register are visible and hide admin links
+                navLoginLink.classList.remove('hidden');
+                navRegisterLink.classList.remove('hidden');
+                navDashboardLink.classList.add('hidden'); // Dashboard might be accessible to non-logged in to view clubs, but actions would be restricted.
+                                                          // For this project, let's keep it visible for general Browse.
+                navCreateClubLink.classList.add('hidden');
+                navManageAdminsLink.classList.add('hidden');
+                navLogoutLink.classList.add('hidden'); // No logout if not logged in
+            }
+
+            // Handle logout
+            navLogoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('userRole'); // Clear user role too
+                localStorage.removeItem('username'); // Clear username
+                window.location.href = 'index.html'; // Redirect to home page
+            });
+
+            // Load clubs when the dashboard page loads
+            // loadClubs();
+        });
+    </script>
+</body>
+</html>

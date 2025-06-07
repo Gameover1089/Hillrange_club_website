@@ -1,0 +1,176 @@
+/* public/css/style.css */
+
+/* Custom styles for the Hillrange Clubs project */
+
+/* Import Google Fonts - Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Apply Inter font family globally if not already set by Tailwind config */
+body {
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+}
+
+/* General Link Styling in Navigation */
+header nav ul li a {
+    position: relative;
+    padding-bottom: 0.25rem; /* Space for underline effect */
+}
+
+header nav ul li a::after {
+    content: '';
+    position: absolute;
+    width: 0%;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: white; /* Underline color */
+    transition: width 0.3s ease-in-out;
+}
+
+header nav ul li a:hover::after {
+    width: 100%;
+}
+
+/* Form input focus styles */
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: #3B82F6; /* blue-500 */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45); /* blue-500 with opacity */
+}
+
+/* Button transitions */
+button {
+    transition: background-color 0.3s ease-in-out, transform 0.1s ease-in-out;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* Specific styles for messages */
+#message.text-red-500 {
+    color: #EF4444; /* Tailwind red-500 */
+}
+
+#message.text-green-500 {
+    color: #22C55E; /* Tailwind green-500 */
+}
+
+#loadingMessage, #errorMessage, #noClubsMessage, #noUsersMessage {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1.5rem;
+    font-weight: 500;
+}
+
+#loadingMessage {
+    background-color: #DBEAFE; /* blue-100 */
+    color: #1E40AF; /* blue-800 */
+}
+
+#errorMessage {
+    background-color: #FEE2E2; /* red-100 */
+    color: #991B1B; /* red-800 */
+}
+
+/* Toast Notification Styles */
+.toast {
+    /* Base styles already defined in utils.js: px-4 py-2 rounded shadow-md text-white */
+    min-width: 200px; /* Ensure a minimum width */
+    text-align: center;
+    font-weight: 600;
+    opacity: 0; /* Start hidden for animation */
+    animation: fadeInOut 4s forwards; /* Animation for fade in/out */
+}
+
+.toast-success {
+    background-color: #22C55E; /* Tailwind green-500 */
+}
+
+.toast-error {
+    background-color: #EF4444; /* Tailwind red-500 */
+}
+
+.toast-warning {
+    background-color: #FBBF24; /* Tailwind amber-400 */
+}
+
+.toast-info {
+    background-color: #3B82F6; /* Tailwind blue-500 */
+}
+
+/* Keyframes for toast fade in/out animation */
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-20px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-20px); }
+}
+
+
+/* Image styles for club cards */
+#clubList img {
+    max-width: 100%;
+    height: 200px; /* Fixed height for consistency */
+    object-fit: cover; /* Ensures images cover the area without distortion */
+}
+
+/* Ensure flex-grow on main content for sticky footer */
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex-grow: 1;
+}
+
+/* Responsive table styling for admin page */
+@media (max-width: 768px) {
+    #userList table,
+    #userList thead,
+    #userList tbody,
+    #userList th,
+    #userList td,
+    #userList tr {
+        display: block;
+    }
+
+    #userList thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    #userList tr {
+        border: 1px solid #ddd;
+        margin-bottom: 0.625em;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    #userList td {
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+    }
+
+    #userList td:before {
+        position: absolute;
+        top: 0;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: bold;
+        content: attr(data-label); /* Use data-label for mobile headings */
+    }
+
+    #userList td:nth-of-type(1):before { content: "Username:"; }
+    #userList td:nth-of-type(2):before { content: "Role:"; }
+    #userList td:nth-of-type(3):before { content: "Actions:"; }
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Club - Hillrange Clubs</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="font-inter bg-gray-100 flex flex-col min-h-screen">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Hillrange Clubs</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="index.html" class="hover:text-blue-200">Home</a></li>
+                    <li><a href="club.html" class="hover:text-blue-200">Clubs</a></li>
+                    <li><a href="login.html" class="hover:text-blue-200 hidden" id="nav-login-link">Login</a></li>
+                    <li><a href="register.html" class="hover:text-blue-200 hidden" id="nav-register-link">Register</a></li>
+                    <li><a href="./dashboard.html" class="hover:text-blue-200" id="nav-dashboard-link">Dashboard</a></li>
+                    <li><a href="./create-club.html" class="hover:text-blue-200 hidden" id="nav-create-club-link">Create Club</a></li>
+                    <li><a href="./manage-admins.html" class="hover:text-blue-200 hidden" id="nav-manage-admins-link">Manage Admins</a></li>
+                    <li><a href="#" class="hover:text-blue-200" id="nav-logout-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 flex-grow flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg">
+            <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Edit Club</h2>
+            <form id="editClubForm" class="space-y-4">
+                <div>
+                    <label for="clubName" class="block text-gray-700 text-sm font-bold mb-2">Club Name:</label>
+                    <input type="text" id="clubName" name="name" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label for="clubDescription" class="block text-gray-700 text-sm font-bold mb-2">Description:</label>
+                    <textarea id="clubDescription" name="description" rows="4" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" required></textarea>
+                </div>
+                <div>
+                    <label for="clubCategory" class="block text-gray-700 text-sm font-bold mb-2">Category (e.g., Tech, Arts, Sports):</label>
+                    <input type="text" id="clubCategory" name="category" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="clubContact" class="block text-gray-700 text-sm font-bold mb-2">Contact Info (Email/Phone):</label>
+                    <input type="text" id="clubContact" name="contact" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div id="currentImageContainer" class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Current Club Image:</label>
+                    <img id="currentClubImage" src="" alt="Current Club Image" class="w-48 h-auto object-cover rounded-md border border-gray-300">
+                    <p id="noImageMessage" class="text-sm text-gray-500 mt-2 hidden">No image uploaded.</p>
+                </div>
+                <div>
+                    <label for="clubImage" class="block text-gray-700 text-sm font-bold mb-2">Upload New Image (Optional):</label>
+                    <input type="file" id="clubImage" name="image" accept="image/*" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full focus:outline-none focus:shadow-outline transition duration-300">
+                    Save Changes
+                </button>
+            </form>
+            <p id="message" class="mt-4 text-center text-sm"></p>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 text-center mt-8">
+        <div class="container mx-auto">
+            <p>&copy; 2025 Hillrange Clubs. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/clubs.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Client-side authorization check
+            if (!isLoggedIn()) {
+                showToast('Please log in to access this page.', 'warning');
+                window.location.href = 'login.html';
+                return;
+            }
+            // Only admins or superadmins can edit clubs
+            if (!isAdminOrSuperAdmin()) {
+                showToast('You do not have permission to edit clubs.', 'error');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const clubId = urlParams.get('id');
+
+            if (clubId) {
+                // Fetch club details and populate form
+                fetchClubForEdit(parseInt(clubId)); // Function from clubs.js
+            } else {
+                showToast('No club ID provided for editing.', 'error');
+                window.location.href = 'dashboard.html';
+            }
+
+            const editClubForm = document.getElementById('editClubForm');
+            if (editClubForm) {
+                editClubForm.addEventListener('submit', updateClub); // Function from clubs.js
+            }
+        });
+    </script>
+</body>
+</html>
