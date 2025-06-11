@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Club Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"
+    ></script>
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"
+    ></script>
+    <script defer src="firebase-config.js"></script>
+    <script defer src="club-details.js"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen p-6">
+    <div
+      id="clubContainer"
+      class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md"
+    >
+      <h1 id="clubName" class="text-2xl font-bold mb-2"></h1>
+      <p id="clubDescription" class="mb-6 text-gray-700"></p>
+
+      <h2 class="font-semibold text-lg mb-1">About the Club</h2>
+      <p id="clubAbout" class="mb-6 text-gray-600"></p>
+
+      <h2 class="font-semibold text-lg mb-1">Club Leaders</h2>
+      <ul id="clubLeaders" class="list-disc list-inside mb-6"></ul>
+
+      <h2 class="font-semibold text-lg mb-1">Meeting Schedule</h2>
+      <p id="clubSchedule" class="mb-6"></p>
+
+      <h2 class="font-semibold text-lg mb-1">Gallery</h2>
+      <img
+        id="clubGallery"
+        src=""
+        alt="Gallery Image"
+        class="rounded-lg mb-6 w-full max-h-64 object-cover"
+      />
+
+      <button
+        id="joinBtn"
+        class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition mb-6"
+      >
+        Join Club
+      </button>
+
+      <div
+        id="chatbox"
+        class="hidden border border-gray-300 p-4 rounded max-h-64 overflow-auto"
+      >
+        <h3 class="font-semibold mb-2">Club Chat</h3>
+        <div id="messages" class="mb-2 overflow-y-auto max-h-40"></div>
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="Type your message..."
+          class="w-full border border-gray-300 rounded p-2"
+        />
+        <button
+          id="sendBtn"
+          class="mt-2 bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 transition"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  </body>
+</html>

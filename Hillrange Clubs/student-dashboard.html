@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 min-h-screen font-sans relative">
+    <!-- Header -->
+    <header class="bg-white shadow p-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold">
+        Welcome, <span id="student-name">Loading...</span>
+      </h1>
+      <button
+        id="logoutBtn"
+        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+      >
+        Logout
+      </button>
+    </header>
+
+    <!-- Club List -->
+    <main class="p-6">
+      <h2 class="text-2xl font-semibold mb-4">Available Clubs</h2>
+      <div
+        id="club-list"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
+        <!-- Cards will be injected here -->
+      </div>
+    </main>
+
+    <!-- Notification Toast -->
+    <div
+      id="toast"
+      class="fixed bottom-6 right-6 px-4 py-2 rounded shadow-lg text-white hidden transition-all duration-300 z-50"
+    ></div>
+
+    <!-- Firebase Scripts -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+        signOut,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        getDocs,
+        query,
+        where,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAVhLn8ApAtWPQa1qREHIemjax60IAFc58",
+        authDomain: "school-clubs-app.firebaseapp.com",
+        projectId: "school-clubs-app",
+        storageBucket: "school-clubs-app.appspot.com",
+        messagingSenderId: "206429567155",
+        appId: "1:206429567155:web:ddf3eba936a41c4b4d18c6",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const clubList = [
+        "Chess Club",
+        "Science Club",
+        "Drama Club",
+        "Math Club",
+        "Music Club",
+      ];
+
+      const studentName = document.getElementById("student-name");
+      const clubContainer = document.getElementById("club-list");
+
+      let currentUser = null;
+      let joinedClub = null;
+
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+        toast.className = `fixed bottom-6 right-6 px-4 py-2 rounded shadow-lg text-white z-50 transition-all duration-300 ${
+          type === "error" ? "bg-red-500" : "bg-green-500"
+        }`;
+        toast.innerText = message;
+        toast.classList.remove("hidden");
+
+        setTimeout(() => {
+          toast.classList.add("hidden");
+        }, 5000); // Show for 5 seconds
+      }
+
+      function createClubCard(clubName, disabled) {
+        const card = document.createElement("div");
+        card.className = "bg-white shadow p-4 rounded-lg";
+
+        const title = document.createElement("h3");
+        title.className = "text-lg font-semibold mb-2";
+        title.innerText = clubName;
+
+        const button = document.createElement("button");
+        button.className = `join-btn mt-2 px-4 py-2 rounded ${
+          disabled
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-blue-500 hover:bg-blue-600"
+        } text-white`;
+        button.innerText = disabled ? "Already Joined" : "Join Club";
+        button.disabled = disabled;
+        button.dataset.club = clubName;
+
+        card.appendChild(title);
+        card.appendChild(button);
+        clubContainer.appendChild(card);
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        currentUser = user;
+        studentName.innerText = user.displayName || user.email;
+
+        // Check if student already joined a club
+        const q = query(
+          collection(db, "clubMemberships"),
+          where("email", "==", user.email)
+        );
+        const snap = await getDocs(q);
+        joinedClub = snap.docs[0]?.data()?.club;
+
+        // Generate club cards
+        clubList.forEach((club) => {
+          createClubCard(club, club === joinedClub || Boolean(joinedClub));
+        });
+
+        // Add button handlers
+        document.querySelectorAll(".join-btn").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            if (joinedClub) {
+              showToast("You’ve already joined a club.", "error");
+              return;
+            }
+
+            const clubName = btn.dataset.club;
+
+            try {
+              await addDoc(collection(db, "clubMemberships"), {
+                name: user.displayName || "Unnamed",
+                email: user.email,
+                club: clubName,
+              });
+
+              joinedClub = clubName;
+              showToast(`You’ve joined ${clubName}!`);
+
+              // Update UI without reloading
+              document.querySelectorAll(".join-btn").forEach((b) => {
+                b.disabled = true;
+                b.className =
+                  "join-btn mt-2 px-4 py-2 rounded bg-gray-400 text-white cursor-not-allowed";
+                b.innerText = "Already Joined";
+              });
+            } catch (err) {
+              console.error(err);
+              showToast("Error joining club.", "error");
+            }
+          });
+        });
+      });
+
+      // Logout
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        signOut(auth).then(() => {
+          window.location.href = "/login.html";
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <!-- 🌐 Navbar -->
+    <nav class="bg-white shadow px-6 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold text-blue-700">🏫 School Clubs</h1>
+      <div class="flex items-center space-x-4">
+        <span id="userEmail" class="text-sm text-gray-600"></span>
+        <button
+          id="logoutBtn"
+          class="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+        >
+          Logout
+        </button>
+      </div>
+    </nav>
+
+    <!-- 📦 Club Cards -->
+    <section class="p-6">
+      <h2 class="text-2xl font-semibold mb-4">Available Clubs</h2>
+      <div
+        id="clubsContainer"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+      >
+        <!-- Cards injected via JS -->
+      </div>
+    </section>
+
+    <script>
+      // ✅ Firebase Config
+      const firebaseConfig = {
+        apiKey: "AIzaSyAVhLn8ApAtWPQa1qREHIemjax60IAFc58",
+        authDomain: "school-clubs-app.firebaseapp.com",
+        projectId: "school-clubs-app",
+        storageBucket: "school-clubs-app.appspot.com",
+        messagingSenderId: "206429567155",
+        appId: "1:206429567155:web:ddf3eba936a41c4b4d18c6",
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+
+      const clubs = [
+        {
+          name: "Coding Club",
+          description: "Learn programming and build awesome projects.",
+        },
+        {
+          name: "Science Club",
+          description:
+            "Explore the wonders of science with hands-on experiments.",
+        },
+        {
+          name: "Art Club",
+          description: "Express your creativity through various art forms.",
+        },
+        {
+          name: "Debate Club",
+          description: "Sharpen your speaking and argumentation skills.",
+        },
+        {
+          name: "Drama Club",
+          description: "Perform and produce plays, skits, and more.",
+        },
+      ];
+
+      const userEmailEl = document.getElementById("userEmail");
+      const clubsContainer = document.getElementById("clubsContainer");
+
+      // 🔐 Auth Check
+      auth.onAuthStateChanged(async (user) => {
+        if (!user) return (window.location.href = "login.html");
+
+        const userDoc = await db.collection("users").doc(user.uid).get();
+        if (!userDoc.exists || userDoc.data().role !== "student") {
+          return (window.location.href = "login.html");
+        }
+
+        userEmailEl.textContent = user.email;
+
+        // 🔁 Render Club Cards
+        clubs.forEach((club) => {
+          const card = document.createElement("div");
+          card.className =
+            "bg-white rounded shadow p-4 hover:shadow-lg transition";
+          card.innerHTML = `
+          <h3 class="text-xl font-semibold text-blue-700">${club.name}</h3>
+          <p class="text-gray-600 my-2">${club.description}</p>
+          <a href="club-details.html?club=${encodeURIComponent(
+            club.name
+          )}" class="text-sm text-blue-500 hover:underline">
+            View Club
+          </a>
+        `;
+          clubsContainer.appendChild(card);
+        });
+      });
+
+      // 🚪 Logout
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        auth.signOut().then(() => (window.location.href = "login.html"));
+      });
+    </script>
+  </body>
+</html>

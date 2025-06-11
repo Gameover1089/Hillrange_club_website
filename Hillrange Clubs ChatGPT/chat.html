@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Chat with Themes</title>
+    <style>
+        :root {
+            --bg-color: #eceff1;
+            --text-color: #000;
+            --chat-bg: #fff;
+            --message-bg: #f1f1f1;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #fff;
+            --chat-bg: #1e1e1e;
+            --message-bg: #333;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        #chat-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: var(--chat-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: var(--message-bg);
+            border-radius: 5px;
+        }
+
+        #message-form {
+            display: flex;
+        }
+
+        #message-form input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        #message-form button {
+            padding: 10px 20px;
+            border: none;
+            background: #007BFF;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #message-form button:hover {
+            background: #0056b3;
+        }
+
+        .message {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .message img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .message .content {
+            background: var(--message-bg);
+            padding: 10px 15px;
+            border-radius: 10px;
+        }
+
+        .message .content strong {
+            color: #007BFF;
+        }
+
+        .message .content em {
+            font-size: 0.85em;
+            color: #777;
+            margin-left: 5px;
+        }
+
+        #settings {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #settings input[type="file"] {
+            display: none;
+        }
+
+        #settings label {
+            cursor: pointer;
+            color: #007BFF;
+            text-decoration: underline;
+        }
+
+        #theme-toggle {
+            cursor: pointer;
+            background: #007BFF;
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="settings">
+            <div>
+                <label for="pfp-upload">Change Profile Picture</label>
+                <input type="file" id="pfp-upload" accept="image/*">
+            </div>
+            <button id="theme-toggle">Switch to Dark Mode</button>
+        </div>
+        <div id="messages"></div>
+        <form id="message-form">
+            <input id="message-input" placeholder="Type a message..." autocomplete="off" required />
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        // Default user details
+        const serverUsername = prompt("Enter your server username:");
+        const usersDatabase = {
+            "student1": { name: "MathWhiz" },
+            "student2": { name: "SciGeek" },
+            "admin": { name: "Doomzee_" }
+        };
+        const userDetails = usersDatabase[serverUsername] || { name: `Guest_${Math.floor(Math.random() * 1000)}` };
+
+        // Get user's saved PFP or assign a default one
+        const savedPfp = localStorage.getItem('user-pfp') || `https://via.placeholder.com/40/6C757D/FFFFFF?text=${userDetails.name.charAt(0).toUpperCase()}`;
+        userDetails.pfp = savedPfp;
+
+        // References to DOM elements
+        const messagesDiv = document.getElementById('messages');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const pfpUpload = document.getElementById('pfp-upload');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        // Event listener for the message form
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            if (messageInput.value.trim() !== "") {
+                const message = {
+                    user: userDetails.name,
+                    text: messageInput.value,
+                    pfp: userDetails.pfp,
+                    timestamp: new Date().toLocaleTimeString()
+                };
+
+                // Add message to the chat
+                addMessageToChat(message);
+
+                // Broadcast the message to other tabs
+                localStorage.setItem('chat-message', JSON.stringify(message));
+
+                messageInput.value = ""; // Clear the input
+            }
+        });
+
+        // Function to add a message to the chat
+        function addMessageToChat(message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `
+                <img src="${message.pfp}" alt="${message.user}'s avatar">
+                <div class="content">
+                    <strong>${message.user}</strong><em>(${message.timestamp})</em><br>
+                    ${message.text}
+                </div>
+            `;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        }
+
+        // Listen for broadcasted messages in other tabs
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'chat-message') {
+                const message = JSON.parse(event.newValue);
+                addMessageToChat(message);
+            }
+        });
+
+        // Handle profile picture upload
+        pfpUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    userDetails.pfp = reader.result;
+                    localStorage.setItem('user-pfp', reader.result);
+                    alert('Profile picture updated!');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Theme toggle
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        document.body.dataset.theme = currentTheme;
+        themeToggle.textContent = currentTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+            document.body.dataset.theme = newTheme;
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+        });
+    </script>
+</body>
+</html>

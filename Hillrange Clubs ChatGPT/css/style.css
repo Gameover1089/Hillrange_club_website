@@ -1,0 +1,85 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #e6e6e6;
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #111;
+    color: white;
+    padding: 0.8rem 1rem;
+}
+
+.logo {
+    height: 40px;
+}
+
+.user-info {
+    background-color: #2962ff;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    color: white;
+}
+
+.main-layout {
+    display: flex;
+    padding: 1rem;
+}
+
+.sidebar {
+    width: 20%;
+    padding: 1rem;
+}
+
+.profile-card {
+    background-color: #2962ff;
+    color: white;
+    padding: 1rem;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.circle {
+    width: 60px;
+    height: 60px;
+    background-color: #ddd;
+    border-radius: 50%;
+    margin: auto;
+    margin-bottom: 1rem;
+}
+
+.content {
+    width: 80%;
+}
+
+.joined-club,
+.available-clubs {
+    margin-bottom: 2rem;
+}
+
+.clubs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.club-card {
+    background-color: #f0f0f0;
+    border: 1px solid #999;
+    border-radius: 12px;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+footer {
+    background-color: #111;
+    color: white;
+    text-align: center;
+    padding: 1rem;
+}

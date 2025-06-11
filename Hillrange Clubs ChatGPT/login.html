@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - School Clubs</title>
+    <script
+      type="module"
+      src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
+    ></script>
+    <script
+      type="module"
+      src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+    ></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./tw.js"></script>
+  </head>
+
+  <body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white shadow-xl rounded-xl p-8 max-w-md w-full">
+      <h2 class="text-2xl font-bold mb-6 text-center">Login to School Clubs</h2>
+
+      <div class="flex flex-col gap-4">
+        <input
+          id="email"
+          type="email"
+          placeholder="Email"
+          class="p-3 border rounded"
+        />
+        <input
+          id="password"
+          type="password"
+          placeholder="Password"
+          class="p-3 border rounded"
+        />
+        <button
+          id="loginBtn"
+          class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+        >
+          Login
+        </button>
+        <p id="error" class="text-red-500 text-sm mt-2"></p>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      const firebaseConfig = {
+        apiKey: "AIzaSyAVhLn8ApAtWPQa1qREHIemjax60IAFc58",
+        authDomain: "school-clubs-app.firebaseapp.com",
+        projectId: "school-clubs-app",
+        storageBucket: "school-clubs-app.appspot.com",
+        messagingSenderId: "206429567155",
+        appId: "1:206429567155:web:ddf3eba936a41c4b4d18c6",
+      };
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const adminEmails = [
+        "admin@school.edu",
+        "admin@gmail.com",
+        "dumtomicheal@gmail.com",
+      ];
+      document
+        .getElementById("loginBtn")
+        .addEventListener("click", async () => {
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+          const errorBox = document.getElementById("error");
+          try {
+            const userCredential = await signInWithEmailAndPassword(
+              auth,
+              email,
+              password
+            );
+            const user = userCredential.user;
+            if (adminEmails.includes(user.email)) {
+              window.location.href = "/admin-dashboard.html";
+            } else {
+              window.location.href = "./index.html";
+            }
+          } catch (error) {
+            console.error(error);
+            errorBox.textContent = error.message;
+          }
+        });
+    </script>
+  </body>
+</html>
