@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Club Details</title>
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <script src="./tw.js"></script>
+    <link rel="icon" href="./hillclublogo.png" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-50 text-gray-800">
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+      <div
+        class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center"
+      >
+        <div class="flex items-center space-x-3">
+          <!-- Inline SVG logo -->
+          <div class="w-12 h-12">
+            <!-- Paste your SVG code here and make sure to add `fill="currentColor"` where needed -->
+            <!-- For now using placeholder SVG -->
+            <img
+              src="./hillclublogo.png"
+              alt="Club Logo"
+              class="w-full h-full object-contain"
+            />
+          </div>
+          <span class="text-2xl font-bold text-yellow-900">School Clubs</span>
+        </div>
+        <a
+          href="studen-dashboard.html"
+          class="text-sm text-yellow-900 hover:text-yellow-700"
+          >← Back to Clubs</a
+        >
+      </div>
+    </header>
+
+    <!-- Club Banner -->
+    <section class="bg-blue-100 py-12">
+      <div class="max-w-4xl mx-auto px-4 text-center">
+        <h2 class="text-4xl font-bold mb-2">Art Club</h2>
+        <p class="text-lg text-gray-700">
+          Unleash your creativity with like-minded artists.
+        </p>
+      </div>
+    </section>
+
+    <!-- Club Details -->
+    <section class="py-16">
+      <div class="max-w-4xl mx-auto px-4 space-y-10">
+        <!-- About -->
+        <div>
+          <h3 class="text-2xl font-semibold mb-2">About the Club</h3>
+          <p class="text-gray-700">
+            The Art Club brings together students who are passionate about
+            drawing, painting, design, and expression. We host art sessions,
+            mini-competitions, and even school mural projects.
+          </p>
+        </div>
+
+        <!-- Leaders -->
+        <div>
+          <h3 class="text-2xl font-semibold mb-2">Club Leaders</h3>
+          <ul class="list-disc list-inside text-gray-700">
+            <li>Jane Doe – President</li>
+            <li>John Smith – Vice President</li>
+          </ul>
+        </div>
+
+        <!-- Schedule -->
+        <div>
+          <h3 class="text-2xl font-semibold mb-2">Meeting Schedule</h3>
+          <p class="text-gray-700">Every Wednesday @ 3:00 PM in Room 204</p>
+        </div>
+
+        <!-- Gallery -->
+        <div>
+          <h3 class="text-2xl font-semibold mb-2">Gallery</h3>
+          <img
+            src="./download.png"
+            alt="Art Example"
+            class="rounded-lg shadow-md w-full max-h-80 object-cover"
+          />
+        </div>
+
+        <!-- Join Button -->
+        <div class="text-center">
+          <a
+            href="#"
+            onclick="openModal()"
+            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+            >Join This Club</a
+          >
+        </div>
+        <!-- Join Modal (hidden by default) -->
+        <div
+          id="joinModal"
+          class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center hidden"
+        >
+          <div
+            class="bg-white rounded-xl p-8 w-full max-w-md shadow-lg relative"
+          >
+            <button
+              onclick="closeModal()"
+              class="absolute top-2 right-3 text-gray-500 hover:text-gray-700 text-xl"
+            >
+              &times;
+            </button>
+            <h3 class="text-2xl font-bold mb-4 text-center text-blue-600">
+              Join This Club
+            </h3>
+
+            <form
+              action="https://docs.google.com/forms/d/e/1FAIpQLSd7v3iNBjLNKA8UdBsYjt2kgrjLWNTR9WjlcoQL4Z175NOkPA/formResponse"
+              method="POST"
+              target="_blank"
+            >
+              <!-- entry.1529879944=d&amp;entry.287481806=q&amp;entry.1277129892=dumtomicheal@gmail.com&amp;entry.40720612=coding+club -->
+              <input
+                type="text"
+                name="entry.1529879944"
+                placeholder="First Name"
+                required
+                class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <input
+                type="text"
+                name="entry.287481806"
+                placeholder="Last Name"
+                required
+                class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <input type="hidden" name="entry.40720612" value="Art Club" />
+
+              <button
+                type="submit"
+                class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+              >
+                Join Club
+              </button>
+            </form>
+
+            <iframe name="hidden_iframe" style="display: none"></iframe>
+            <p id="successMsg" class="text-green-600 text-center mt-4 hidden">
+              ✅ You’ve joined successfully!
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <footer class="bg-gray-900 text-gray-300 py-6 mt-12 w-full">
+      <div
+        class="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center"
+      >
+        <p class="text-sm">
+          &copy; 2025 Your Hillrange Secondary School. All rights reserved.
+        </p>
+        <div class="flex space-x-6 mt-4 md:mt-0">
+          <a href="#" class="hover:text-white transition">Privacy Policy</a>
+          <a href="#" class="hover:text-white transition">Terms of Service</a>
+          <a
+            href="mailto:contact@yourschool.edu"
+            class="hover:text-white transition"
+            >Contact</a
+          >
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      function openModal() {
+        document.getElementById("joinModal").classList.remove("hidden");
+      }
+
+      function closeModal() {
+        document.getElementById("joinModal").classList.add("hidden");
+        document.getElementById("successMsg").classList.add("hidden");
+      }
+
+      function formSubmitted() {
+        document.getElementById("successMsg").classList.remove("hidden");
+        setTimeout(closeModal, 2000);
+      }
+      // document.getElementById('joinForm').addEventListener('submit', function(e) {
+      //     e.preventDefault();
+      //     // You could add a real submission call here later (e.g., fetch to backend)
+      //     document.getElementById('successMsg').classList.remove('hidden');
+      //     setTimeout(closeModal, 1500); // Close modal after 2 seconds
+      // });
+    </script>
+  </body>
+</html>

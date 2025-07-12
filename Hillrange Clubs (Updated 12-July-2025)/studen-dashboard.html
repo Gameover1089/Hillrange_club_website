@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hillrange School Clubs - Student Dashboard</title>
+    <link rel="shortcut icon" href="hillclublogo.png" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tw.js"></script>
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"
+    ></script>
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"
+    ></script>
+    <script defer src="firebase-config.js"></script>
+    <script defer src="dashboard.js"></script>
+    <style>
+      @keyframes slide-in {
+        0% {
+          opacity: 0;
+          transform: translateX(100%) scale(0.95);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+        }
+      }
+      @keyframes slide-out {
+        0% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(100%) scale(0.95);
+        }
+      }
+      .animate-slide-in {
+        animation: slide-in 0.4s ease-out forwards;
+      }
+      .animate-slide-out {
+        animation: slide-out 0.4s ease-in forwards;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-200 min-h-screen flex flex-col">
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-5 right-5 space-y-4 z-50"></div>
+
+    <!-- Navbar -->
+    <header
+      class="bg-black text-white flex items-center justify-between px-6 py-3"
+    >
+      <nav class="flex items-center gap-3" aria-label="Main navigation">
+        <img src="hillclublogo.png" alt="Hillrange School Logo" class="h-10" />
+        <span class="text-lg font-semibold">Hillrange School Clubs</span>
+      </nav>
+      <div
+        id="userEmail"
+        class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm"
+        aria-live="polite"
+      ></div>
+    </header>
+
+    <!-- Main Layout -->
+    <main class="flex flex-1 p-6 gap-4 flex-col md:flex-row">
+      <!-- Sidebar -->
+      <aside class="w-full md:w-1/5 mb-6 md:mb-0">
+        <section
+          class="bg-blue-600 text-white rounded-2xl p-4 flex flex-col items-center"
+          aria-label="Profile"
+        >
+          <div class="relative group w-16 h-16 mb-4">
+            <img
+              id="profilePic"
+              src="hillclublogo.png"
+              alt="Profile picture"
+              class="w-full h-full object-cover rounded-full border-4 border-white shadow-lg transition duration-300"
+              tabindex="0"
+            />
+            <!-- Pencil Icon -->
+            <button
+              type="button"
+              aria-label="Change profile picture"
+              class="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition duration-300 cursor-pointer"
+              onclick="toggleGallery()"
+              tabindex="0"
+            >
+              <svg
+                class="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15.232 5.232l3.536 3.536M9 13l6-6m2 2l-6 6m-2 2h6"
+                ></path>
+              </svg>
+            </button>
+          </div>
+          <!-- Gallery (Hidden by Default) -->
+          <div
+            id="gallery"
+            class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            tabindex="-1"
+            aria-modal="true"
+            role="dialog"
+            onclick="closeGallery(event)"
+          >
+            <div
+              class="bg-white rounded-lg shadow-lg p-6 grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg"
+              onclick="event.stopPropagation()"
+            >
+              <img
+                src="hillclublogo.png"
+                alt="Hillrange Logo"
+                class="w-24 h-24 object-cover rounded-full cursor-pointer hover:scale-110 transition"
+                onclick="setProfilePic(this)"
+                tabindex="0"
+              />
+              <img
+                src="https://placehold.co/600x400?font=roboto?text=Pen"
+                alt="Pen"
+                class="w-24 h-24 object-cover rounded-full cursor-pointer hover:scale-110 transition"
+                onclick="setProfilePic(this)"
+                tabindex="0"
+              />
+              <img
+                src="https://placehold.co/600x400?font=roboto?text=Ruler"
+                alt="Ruler"
+                class="w-24 h-24 object-cover rounded-full cursor-pointer hover:scale-110 transition"
+                onclick="setProfilePic(this)"
+                tabindex="0"
+              />
+              <img
+                src="https://via.placeholder.com/150/15803D/ffffff?text=Board"
+                alt="Board"
+                class="w-24 h-24 object-cover rounded-full cursor-pointer hover:scale-110 transition"
+                onclick="setProfilePic(this)"
+                tabindex="0"
+              />
+              <img
+                src="https://via.placeholder.com/150/7C3AED/ffffff?text=Globe"
+                alt="Globe"
+                class="w-24 h-24 object-cover rounded-full cursor-pointer hover:scale-110 transition"
+                onclick="setProfilePic(this)"
+                tabindex="0"
+              />
+              <img
+                src="https://via.placeholder.com/150/F59E0B/ffffff?text=Bag"
+                alt="Bag"
+                class="w-24 h-24 object-cover rounded-full cursor-pointer hover:scale-110 transition"
+                onclick="setProfilePic(this)"
+                tabindex="0"
+              />
+              <button
+                type="button"
+                class="col-span-full mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition"
+                onclick="toggleGallery()"
+                aria-label="Close gallery"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          <p class="text-center mt-2">
+            Hello,<br /><span id="accountRole" class="font-semibold"></span>
+          </p>
+        </section>
+      </aside>
+
+      <!-- Content -->
+      <section class="flex-1">
+        <!-- Joined Club -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold mb-2">Joined Club:</h3>
+          <div
+            id="joinedClub"
+            class="border border-gray-400 bg-white rounded-xl h-24 flex items-center justify-center text-gray-600"
+            aria-live="polite"
+          >
+            No club joined yet
+          </div>
+        </div>
+
+        <!-- Available Clubs -->
+        <div>
+          <h3 class="text-lg font-semibold mb-4 text-yellow-800">
+            Available Clubs:
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            <!-- Science Club -->
+            <div
+              class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition flex flex-col"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="mx-auto w-12 h-12 text-blue-600 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <h3 class="text-xl font-semibold mb-2 text-yellow-900">
+                Science Club
+              </h3>
+              <p class="text-sm text-gray-600 flex-1">
+                Explore experiments, innovations, and competitions.
+              </p>
+              <a
+                href="club-details-science.html"
+                class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium"
+                >View Club</a
+              >
+            </div>
+            <!-- Drama Club -->
+            <div
+              class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition flex flex-col"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="mx-auto w-12 h-12 text-purple-600 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  d="M9 12a3 3 0 0 1-6 0v-2a9 9 0 0 1 18 0v2a3 3 0 0 1-6 0"
+                />
+              </svg>
+              <h3 class="text-xl font-semibold mb-2 text-yellow-900">
+                Drama Club
+              </h3>
+              <p class="text-sm text-gray-600 flex-1">
+                Unleash your inner actor with fun, plays, and performances.
+              </p>
+              <a
+                href="club-details-drama.html"
+                class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium"
+                >View Club</a
+              >
+            </div>
+            <!-- Coding Club -->
+            <div
+              class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition flex flex-col"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="mx-auto w-12 h-12 text-green-600 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
+              </svg>
+              <h3 class="text-xl font-semibold mb-2 text-yellow-900">
+                Coding Club
+              </h3>
+              <p class="text-sm text-gray-600 flex-1">
+                Build websites, games, and apps. Beginners welcome!
+              </p>
+              <a
+                href="club-details-coding.html"
+                class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium"
+                >View Club</a
+              >
+            </div>
+            <!-- Music Club
+            <div class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition flex flex-col">
+              <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto w-12 h-12 text-green-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6" /></svg>
+              <h3 class="text-xl font-semibold mb-2 text-yellow-900">Music Club</h3>
+              <p class="text-sm text-gray-600 flex-1">Jam, compose, and perform together with fellow musicians.</p>
+              <a href="club-details-coding.html" class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium">View Club</a>
+            </div> -->
+            <!-- Coding Club -->
+            <div
+              class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition flex flex-col"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="mx-auto w-12 h-12 text-green-600 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
+              </svg>
+              <h3 class="text-xl font-semibold mb-2 text-yellow-900">
+                Music Club
+              </h3>
+              <p class="text-sm text-gray-600 flex-1">
+                Jam, compose, and perform together with fellow musicians.
+              </p>
+              <a
+                href="club-details-coding.html"
+                class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium"
+                >View Club</a
+              >
+            </div>
+            <!-- Art Club -->
+            <!-- <div
+              class="bg-white rounded-2xl overflow-hidden shadow hover:shadow-lg transition flex flex-col"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=800&q=80"
+                alt="Art Club"
+                class="w-full h-40 object-cover"
+              />
+              <div class="p-6 text-center flex-1 flex flex-col">
+                <h3 class="text-xl font-semibold mb-2 text-yellow-900">
+                  Art Club
+                </h3>
+                <p class="text-sm text-gray-600 flex-1">
+                  Paint, draw, and design projects with creative freedom.
+                </p>
+                <a
+                  href="art-club-details.html"
+                  class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium"
+                  >View Club</a
+                >
+              </div>
+            </div> -->
+            <!-- Art Club -->
+            <div
+              class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition flex flex-col"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="mx-auto w-12 h-12 text-green-600 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
+              </svg>
+              <h3 class="text-xl font-semibold mb-2 text-yellow-900">
+                Art Club
+              </h3>
+              <p class="text-sm text-gray-600 flex-1">
+                Paint, draw, and design projects with creative freedom.
+              </p>
+              <a
+                href="club-details-coding.html"
+                class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium"
+                >View Club</a
+              >
+            </div>
+            <!-- Debate Club -->
+            <!-- <div
+              class="bg-white rounded-2xl overflow-hidden shadow hover:shadow-lg transition flex flex-col"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1596495577886-d920f1fb7238?auto=format&fit=crop&w=800&q=80"
+                alt="Debate Club"
+                class="w-full h-40 object-cover"
+              />
+              <div class="p-6 text-center flex-1 flex flex-col">
+                <h3 class="text-xl font-semibold mb-2 text-yellow-900">
+                  Debate Club
+                </h3>
+                <p class="text-sm text-gray-600 flex-1">
+                  Sharpen your speaking skills and engage in fun debates.
+                </p>
+                <a
+                  href="club-details-debate.html"
+                  class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium"
+                  >View Club</a
+                >
+              </div>
+            </div> -->
+            <!-- Debate Club -->
+            <div
+              class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition flex flex-col"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="mx-auto w-12 h-12 text-green-600 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
+              </svg>
+              <h3 class="text-xl font-semibold mb-2 text-yellow-900">
+                Debate Club
+              </h3>
+              <p class="text-sm text-gray-600 flex-1">
+                Sharpen your speaking skills and engage in fun debates.
+              </p>
+              <a
+                href="club-details-coding.html"
+                class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium"
+                >View Club</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white text-center py-4 text-sm">
+      © 2025 Hillrange Secondary School. All rights reserved.
+    </footer>
+
+    <script>
+      // Toast system
+      function showToast(type = "success", message = "Operation completed.") {
+        const container = document.getElementById("toastContainer");
+        const toast = document.createElement("div");
+        let bg = "bg-gray-800";
+        if (type === "success") bg = "bg-green-600";
+        if (type === "error") bg = "bg-red-600";
+        if (type === "info") bg = "bg-blue-600";
+        toast.className = `flex items-center gap-3 w-80 px-4 py-3 rounded-xl shadow-lg text-white font-semibold text-base ${bg} animate-slide-in`;
+        let icon = "🔔";
+        if (type === "success") icon = "✅";
+        else if (type === "error") icon = "❌";
+        else if (type === "info") icon = "ℹ️";
+        toast.innerHTML = `
+          <span class="text-xl">${icon}</span>
+          <span class="flex-1">${message}</span>
+          <button class="ml-2 text-white/70 hover:text-white text-xl" onclick="this.parentElement.remove()" aria-label="Close toast">×</button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.classList.remove("animate-slide-in");
+          toast.classList.add("animate-slide-out");
+          setTimeout(() => toast.remove(), 400);
+        }, 3000);
+      }
+
+      // Profile gallery logic
+      function toggleGallery() {
+        const gallery = document.getElementById("gallery");
+        if (gallery) {
+          gallery.classList.toggle("hidden");
+          if (!gallery.classList.contains("hidden")) {
+            gallery.focus();
+          }
+        }
+      }
+      function closeGallery(event) {
+        if (event.target.id === "gallery") {
+          toggleGallery();
+        }
+      }
+      function setProfilePic(img) {
+        const profile = document.getElementById("profilePic");
+        if (profile && img && img.src) {
+          profile.src = img.src;
+          showToast("success", "Profile picture updated!");
+        }
+        toggleGallery();
+      }
+      // Keyboard accessibility for gallery
+      document.addEventListener("keydown", function (e) {
+        const gallery = document.getElementById("gallery");
+        if (
+          gallery &&
+          !gallery.classList.contains("hidden") &&
+          e.key === "Escape"
+        ) {
+          toggleGallery();
+        }
+      });
+
+      // Club data (add icons and images as in index.html)
+      const clubData = [
+        {
+          name: "Science Club",
+          description: "Explore experiments, innovations, and competitions.",
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" class="mx-auto w-12 h-12 text-blue-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`,
+          link: "club-details.html",
+          bg: "bg-blue-50",
+        },
+        {
+          name: "Drama Club",
+          description:
+            "Unleash your inner actor with fun, plays, and performances.",
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" class="mx-auto w-12 h-12 text-purple-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 12a3 3 0 0 1-6 0v-2a9 9 0 0 1 18 0v2a3 3 0 0 1-6 0" /></svg>`,
+          link: "club-details.html",
+          bg: "bg-blue-50",
+        },
+        {
+          name: "Coding Club",
+          description: "Build websites, games, and apps. Beginners welcome!",
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" class="mx-auto w-12 h-12 text-green-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6" /></svg>`,
+          link: "coding-club-details.html",
+          bg: "bg-blue-50",
+        },
+        {
+          name: "Music Club",
+          description:
+            "Jam, compose, and perform together with fellow musicians.",
+          image:
+            "https://images.unsplash.com/photo-1508970436-aedba1f4e3fa?auto=format&fit=crop&w=800&q=80",
+          link: "#",
+          bg: "bg-white",
+        },
+        {
+          name: "Art Club",
+          description:
+            "Paint, draw, and design projects with creative freedom.",
+          image:
+            "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=800&q=80",
+          link: "art-club-details.html",
+          bg: "bg-white",
+        },
+        {
+          name: "Debate Club",
+          description:
+            "Sharpen your speaking skills and engage in fun debates.",
+          image:
+            "https://images.unsplash.com/photo-1596495577886-d920f1fb7238?auto=format&fit=crop&w=800&q=80",
+          link: "#",
+          bg: "bg-white",
+        },
+      ];
+
+      window.addEventListener("DOMContentLoaded", () => {
+        setTimeout(() => {
+          const loading = document.getElementById("clubsLoading");
+          if (loading) loading.remove();
+          const clubsGrid = document.getElementById("clubsGrid");
+          if (clubsGrid) {
+            clubData.forEach((club) => {
+              let card;
+              if (club.icon) {
+                // Icon-based card
+                card = document.createElement("div");
+                card.className = `${club.bg} rounded-2xl p-6 text-center shadow hover:shadow-lg transition flex flex-col`;
+                card.innerHTML = `
+                  <div>${club.icon}</div>
+                  <h3 class="text-xl font-semibold mb-2 text-yellow-900">${club.name}</h3>
+                  <p class="text-sm text-gray-600 flex-1">${club.description}</p>
+                  <a href="${club.link}" class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium">View Club</a>
+                `;
+              } else {
+                // Image-based card
+                card = document.createElement("div");
+                card.className = `${club.bg} rounded-2xl overflow-hidden shadow hover:shadow-lg transition flex flex-col`;
+                card.innerHTML = `
+                  <img src="${club.image}" alt="${club.name}" class="w-full h-40 object-cover" />
+                  <div class="p-6 text-center flex-1 flex flex-col">
+                    <h3 class="text-xl font-semibold mb-2 text-yellow-900">${club.name}</h3>
+                    <p class="text-sm text-gray-600 flex-1">${club.description}</p>
+                    <a href="${club.link}" class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-medium">View Club</a>
+                  </div>
+                `;
+              }
+              clubsGrid.appendChild(card);
+            });
+          }
+        }, 1200);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - School Clubs</title>
+    <script
+      type="module"
+      src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
+    ></script>
+    <script
+      type="module"
+      src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+    ></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tw.js"></script>
+    <!-- <style>
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+        opacity: 0;
+      }
+
+      @keyframes fadeIn {
+        to {
+          opacity: 1;
+        }
+      }
+      #toast {
+        display: none;
+      }
+    </style> -->
+  </head>
+
+  <body class="bg-gray-100 flex items-center justify-center h-screen">
+    <!-- Toast -->
+    <!-- <div
+      id="toast"
+      class="fixed animate-fade-in top-4 right-4 p-4 bg-yellow-500 border-yellow-500 text-gray-900 font-semibold rounded-lg shadow-2xl transform translate-x-0 transition-transform ease-out duration-500"
+    >
+      <i class="fa fa-circle-o-notch fa-spin"></i> ✅ Success! Redirecting
+    </div> -->
+    <!-- <div class="bg-white shadow-xl rounded-xl p-8 max-w-md w-full">
+      <h2 class="text-2xl font-bold mb-6 text-center">Login to School Clubs</h2>
+
+      <div class="flex flex-col gap-4">
+        <input
+          id="email"
+          type="email"
+          placeholder="Email"
+          class="p-3 border rounded"
+        />
+        <input
+          id="password"
+          type="password"
+          placeholder="Password"
+          class="p-3 border rounded"
+        />
+        <button
+          id="loginBtn"
+          class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+        >
+          Login
+        </button>
+        <p id="error" class="text-red-500 text-sm mt-2"></p>
+      </div>
+    </div> -->
+    <div
+      class="max-w-md mx-auto mt-16 bg-yellow-50 border border-yellow-200 shadow-xl rounded-2xl p-8 space-y-6 animate-fade-in"
+    >
+      <div class="text-center">
+        <h2 class="text-2xl font-extrabold text-yellow-800">Welcome Back!</h2>
+        <p class="text-gray-600 mt-1">
+          Login or create an account to join a club
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <input
+          type="email"
+          id="email"
+          placeholder="Email address"
+          class="w-full px-4 py-2 border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+        />
+
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          class="w-full px-4 py-2 border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+        />
+      </div>
+
+      <div id="loginBtn" class="flex gap-4 pt-2">
+        <svg
+          id="spinner"
+          viewBox="0 0 24 24"
+          class="animate-spin ml-2 w-6 h-6 hidden"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+            fill="none"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 017-7.94V4a8 8 0 100 16v-1.06A8 8 0 014 12z"
+          ></path>
+        </svg>
+        <button
+          onclick="login()"
+          class="w-1/2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition duration-200"
+        >
+          Login
+        </button>
+        <button
+          onclick="signup()"
+          class="w-1/2 bg-white border border-yellow-500 hover:bg-yellow-100 text-yellow-700 font-semibold py-2 rounded-lg transition duration-200"
+        >
+          Sign Up
+        </button>
+      </div>
+
+      <p
+        id="auth-status"
+        class="text-center text-sm text-yellow-700 font-medium mt-3"
+      ></p>
+    </div>
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="fixed top-5 right-5 space-y-4 z-50"></div>
+
+    <script>
+      // Tailwind Toast Function
+      function showToast(
+        type = "success",
+        message = "Operation completed successfully."
+      ) {
+        const container = document.getElementById("toastContainer");
+
+        // Create toast div
+        const toast = document.createElement("div");
+        let bg = "bg-gray-800";
+        if (type === "success") bg = "bg-green-600";
+        if (type === "error") bg = "bg-red-600";
+        if (type === "info") bg = "bg-blue-600";
+
+        toast.className = `
+      flex items-center gap-3 w-80 px-4 py-3 rounded-xl shadow-lg
+      text-white font-semibold text-base ${bg} animate-slide-in
+    `;
+
+        // Icons
+        let icon = "🔔";
+        if (type === "success") icon = "✅";
+        else if (type === "error") icon = "❌";
+        else if (type === "info") icon = "ℹ️";
+
+        toast.innerHTML = `
+      <span class="text-xl">${icon}</span>
+      <span class="flex-1">${message}</span>
+      <button class="ml-2 text-white/70 hover:text-white text-xl" onclick="this.parentElement.remove()">×</button>
+    `;
+
+        container.appendChild(toast);
+
+        // Auto remove
+        setTimeout(() => {
+          toast.classList.remove("animate-slide-in");
+          toast.classList.add("animate-slide-out");
+          setTimeout(() => toast.remove(), 400);
+        }, 3000);
+      }
+    </script>
+
+    <style>
+      @keyframes slide-in {
+        0% {
+          opacity: 0;
+          transform: translateX(100%) scale(0.95);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+        }
+      }
+      @keyframes slide-out {
+        0% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(100%) scale(0.95);
+        }
+      }
+
+      .animate-slide-in {
+        animation: slide-in 0.4s ease-out forwards;
+      }
+
+      .animate-slide-out {
+        animation: slide-out 0.4s ease-in forwards;
+      }
+    </style>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      const firebaseConfig = {
+        apiKey: "AIzaSyAVhLn8ApAtWPQa1qREHIemjax60IAFc58",
+        authDomain: "school-clubs-app.firebaseapp.com",
+        projectId: "school-clubs-app",
+        storageBucket: "school-clubs-app.appspot.com",
+        messagingSenderId: "206429567155",
+        appId: "1:206429567155:web:ddf3eba936a41c4b4d18c6",
+      };
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const adminEmails = [
+        "admin@school.edu",
+        "admin@gmail.com",
+        "dumtomicheal@gmail.com",
+      ];
+      document
+        .getElementById("loginBtn")
+        .addEventListener("click", async () => {
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+          const errorBox = document.getElementById("error");
+
+          try {
+            const userCredential = await signInWithEmailAndPassword(
+              auth,
+              email,
+              password
+            );
+            const user = userCredential.user;
+            if (adminEmails.includes(user.email)) {
+              window.location.href = "./admin-dashboard.html";
+            } else {
+              // document.getElementById("auth-status").textContent =
+              //   "Logged in successfully!";
+              window.location.href = "./index.html";
+            }
+          } catch (error) {
+            console.error(error);
+            document.getElementById("auth-status").textContent = error.message;
+          }
+          // auth
+          //   .signInWithEmailAndPassword(email, password)
+          //   .then((userCredential) => {
+          //     document.getElementById("auth-status").textContent =
+          //       "Logged in successfully!";
+          //   })
+          //   .catch((error) => {
+          //     document.getElementById("auth-status").textContent =
+          //       error.message;
+          //   });
+        });
+    </script>
+    <script>
+      document.getElementById("loginBtn").addEventListener("click", () => {
+        const toast = document.getElementById("toast");
+        toast.style.display = "block";
+
+        setTimeout(function () {
+          toast.style.display = "none"; // back offscreen after 2 seconds
+        }, 3000);
+      });
+    </script>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+    <script>
+      // Show user email
+      auth.onAuthStateChanged((user) => {
+        const profileEmail = document.getElementById("profileEmail");
+        const wrapper = document.getElementById("profileDropdownWrapper");
+        if (user) {
+          profileEmail.textContent = user.email;
+          wrapper.classList.remove("hidden");
+        } else {
+          wrapper.classList.add("hidden");
+        }
+      });
+
+      function login() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        auth
+          .signInWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            showToast("success", "Logged in successfully!");
+          })
+          .catch((error) => {
+            showToast("error", error.message);
+          });
+      }
+
+      function login() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        auth
+          .signInWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            showToast("success", "Logged in successfully!");
+          })
+          .catch((error) => {
+            showToast("error", error.message);
+          });
+      }
+
+      function signup() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        auth
+          .createUserWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            showToast("error", "Account created!");
+          })
+          .catch((error) => {
+            showToast("error", error.message);
+          });
+      }
+      // Toggle dropdown
+      document.getElementById("profileToggle").addEventListener("click", () => {
+        const menu = document.getElementById("profileMenu");
+        menu.classList.toggle("hidden");
+      });
+
+      // Logout function
+      function logout() {
+        auth
+          .signOut()
+          .then(() => {
+            window.location.reload(); // or redirect to login
+          })
+          .catch((error) => {
+            showToast("error", "Error logging out: " + error.message);
+          });
+      }
+
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          console.log("User is signed in:", user.email);
+        } else {
+          console.log("No user signed in.");
+        }
+      });
+    </script>
+  </body>
+</html>

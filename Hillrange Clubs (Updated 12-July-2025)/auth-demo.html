@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Clubs Auth Demo</title>
+  <script type="module" src="./tw.js"></script>
+</head>
+<body class="h-full flex flex-col items-center justify-center p-6">
+
+  <!-- Auth UI -->
+  <div id="authState" class="hidden flex flex-col items-center space-y-4">
+    <p id="userInfo" class="text-lg font-semibold text-gray-800"></p>
+    <button id="logoutBtn" class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition">
+      Sign Out
+    </button>
+  </div>
+
+  <button id="loginBtn" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
+    Sign In with Google
+  </button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAVhLn8ApAtWPQa1qREHIemjax60IAFc58",
+      authDomain: "school-clubs-app.firebaseapp.com",
+      projectId: "school-clubs-app",
+      storageBucket: "school-clubs-app.firebasestorage.app",
+      messagingSenderId: "206429567155",
+      appId: "1:206429567155:web:ddf3eba936a41c4b4d18c6"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // Elements
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const authStateDiv = document.getElementById("authState");
+    const userInfo = document.getElementById("userInfo");
+
+    // Login handler
+    loginBtn.onclick = () => signInWithPopup(auth, provider);
+
+    // Logout handler
+    logoutBtn.onclick = () => signOut(auth);
+
+    // Listen for auth state changes
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userInfo.textContent = `Hello, ${user.displayName}`;
+        authStateDiv.classList.remove("hidden");
+        loginBtn.classList.add("hidden");
+      } else {
+        authStateDiv.classList.add("hidden");
+        loginBtn.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

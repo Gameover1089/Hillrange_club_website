@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hillrange School Clubs</title>
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <script src="./tw.js"></script>
+    <link rel="icon" href="./hillclublogo.png" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-50 text-gray-800">
+    <!-- Navbar -->
+    <!-- <header class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-600">
+                <image style="height: 10%; width: 10%; float: left;" src="./hillclublogo.png"></image> Hillrange School Clubs</h1>
+            <nav class="space-x-6 text-sm" style="height: 100%;">
+                <a href="#" class="hover:text-blue-600">Home</a>
+                <a href="#clubs" class="hover:text-blue-600">Clubs</a>
+                <a href="#events" class="hover:text-blue-600">Events</a>
+                <a href="#contact" class="hover:text-blue-600">Contact</a>
+            </nav>
+        </div>
+    </header> -->
+    <header
+      class="bg-yellow-50 shadow-md py-4 px-6 flex items-center justify-between"
+    >
+      <!-- Logo -->
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12">
+          <img
+            src="./hillclublogo.png"
+            alt="Club Logo"
+            class="w-full h-full object-contain"
+          />
+        </div>
+        <span class="text-2xl font-bold text-yellow-900"
+          >Hillrange School Clubs</span
+        >
+      </div>
+
+      <!-- Navigation -->
+      <nav class="hidden md:flex space-x-6">
+        <a href="/" class="text-yellow-900 hover:text-yellow-700 font-medium"
+          >Home</a
+        >
+        <a
+          href="studen-dashboard.html"
+          class="text-yellow-900 hover:text-yellow-700 font-medium"
+          >My Clubs</a
+        >
+        <a
+          href="#about"
+          class="text-yellow-900 hover:text-yellow-700 font-medium"
+          >About</a
+        >
+        <a
+          href="#contact"
+          class="text-yellow-900 hover:text-yellow-700 font-medium"
+          >Contact</a
+        >
+      </nav>
+      <div class="relative" id="profileDropdownWrapper">
+        <button
+          id="profileToggle"
+          class="flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded focus:outline-none"
+        >
+          <span id="profileEmail" class="text-sm"
+            ><i class="fa fa-circle-o-notch fa-spin"></i> Loading...</span
+          >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div
+          id="profileMenu"
+          class="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md hidden"
+        >
+          <button
+            onclick="logout()"
+            class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="bg-blue-100 py-20">
+      <div class="max-w-4xl mx-auto px-4 text-center">
+        <h2 class="text-4xl font-bold mb-4">Discover Your Passion</h2>
+        <p class="text-lg mb-6">
+          Join a club. Build friendships. Grow your talents. Our school clubs
+          are waiting for you!
+        </p>
+        <a
+          href="#clubs"
+          class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+          >Explore Clubs</a
+        >
+      </div>
+    </section>
+
+    <!-- Featured Clubs Section -->
+    <section id="clubs" class="py-16 bg-white">
+      <div class="max-w-6xl mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-10">Featured Clubs</h2>
+
+        <!-- First Row: Icon-based cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-12">
+          <!-- Science Club -->
+          <div
+            class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition"
+          >
+            <div class="text-blue-600 mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="mx-auto w-12 h-12"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Science Club</h3>
+            <p class="text-sm text-gray-600">
+              Explore experiments, innovations, and competitions.
+            </p>
+            <!-- Inside any club card, at the bottom -->
+            <a
+              href="club-details.html"
+              class="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+              View Club
+            </a>
+          </div>
+
+          <!-- Drama Club -->
+          <div
+            class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition"
+          >
+            <div class="text-purple-600 mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="mx-auto w-12 h-12"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  d="M9 12a3 3 0 0 1-6 0v-2a9 9 0 0 1 18 0v2a3 3 0 0 1-6 0"
+                />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Drama Club</h3>
+            <p class="text-sm text-gray-600">
+              Unleash your inner actor with fun, plays, and performances.
+            </p>
+            <!-- Inside any club card, at the bottom -->
+            <a
+              href="club-details.html"
+              class="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+              View Club
+            </a>
+          </div>
+
+          <!-- Coding Club -->
+          <div
+            class="bg-blue-50 rounded-2xl p-6 text-center shadow hover:shadow-lg transition"
+          >
+            <div class="text-green-600 mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="mx-auto w-12 h-12"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Coding Club</h3>
+            <p class="text-sm text-gray-600">
+              Build websites, games, and apps. Beginners welcome!
+            </p>
+            <!-- Inside any club card, at the bottom -->
+            <a
+              href="coding-club-details.html"
+              class="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+              View Club
+            </a>
+          </div>
+        </div>
+
+        <!-- Second Row: Image-based cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+          <!-- Music Club -->
+          <div
+            class="bg-white rounded-2xl overflow-hidden shadow hover:shadow-lg transition"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1508970436-aedba1f4e3fa?auto=format&fit=crop&w=800&q=80"
+              alt="Music Club"
+              class="w-full h-40 object-cover"
+            />
+            <div class="p-6 text-center">
+              <h3 class="text-xl font-semibold mb-2">Music Club</h3>
+              <p class="text-sm text-gray-600">
+                Jam, compose, and perform together with fellow musicians.
+              </p>
+            </div>
+          </div>
+
+          <!-- Art Club -->
+          <div
+            class="bg-white rounded-2xl overflow-hidden shadow hover:shadow-lg transition"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=800&q=80"
+              alt="Art Club"
+              class="w-full h-40 object-cover"
+            />
+            <div class="p-6 text-center">
+              <h3 class="text-xl font-semibold mb-2">Art Club</h3>
+              <p class="text-sm text-gray-600">
+                Paint, draw, and design projects with creative freedom.
+              </p>
+              <!-- Inside any club card, at the bottom -->
+              <a
+                href="art-club-details.html"
+                class="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              >
+                View Club
+              </a>
+            </div>
+          </div>
+
+          <!-- Debate Club -->
+          <div
+            class="bg-white rounded-2xl overflow-hidden shadow hover:shadow-lg transition"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1596495577886-d920f1fb7238?auto=format&fit=crop&w=800&q=80"
+              alt="Debate Club"
+              class="w-full h-40 object-cover"
+            />
+            <div class="p-6 text-center">
+              <h3 class="text-xl font-semibold mb-2">Debate Club</h3>
+              <p class="text-sm text-gray-600">
+                Sharpen your speaking skills and engage in fun debates.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- About Section -->
+    <section id="about" class="bg-white py-16 px-6">
+      <div class="max-w-3xl mx-auto text-center">
+        <h2 class="text-3xl font-bold text-yellow-800 mb-4">About Us</h2>
+        <p class="text-gray-700 text-lg">
+          Our school clubs platform is designed to help students explore their
+          interests, build leadership skills, and connect with like-minded
+          peers. Whether you're into science, tech, arts, or sports, there's a
+          place for you here.
+        </p>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="bg-yellow-50 py-16 px-6">
+      <div class="max-w-2xl mx-auto text-center">
+        <h2 class="text-3xl font-bold text-yellow-800 mb-4">Contact Us</h2>
+        <p class="text-gray-700 text-lg mb-6">
+          Have questions or suggestions? Reach out to our club coordinators.
+        </p>
+        <form class="space-y-4">
+          <input
+            type="text"
+            placeholder="Your Name"
+            class="w-full px-4 py-2 border rounded-md"
+            required
+          />
+          <input
+            type="email"
+            placeholder="Your Email"
+            class="w-full px-4 py-2 border rounded-md"
+            required
+          />
+          <textarea
+            placeholder="Your Message"
+            class="w-full px-4 py-2 border rounded-md"
+            rows="4"
+            required
+          ></textarea>
+          <button
+            type="submit"
+            class="bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-600"
+          >
+            Send Message
+          </button>
+        </form>
+      </div>
+    </section>
+    <footer class="bg-gray-900 text-gray-300 py-6 mt-12 w-full">
+      <div
+        class="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center"
+      >
+        <p class="text-sm">
+          &copy; 2025 Hillrange Secondary School All rights reserved.
+        </p>
+        <div class="flex space-x-6 mt-4 md:mt-0">
+          <a href="#" class="hover:text-white transition">Privacy Policy</a>
+          <a href="#" class="hover:text-white transition">Terms of Service</a>
+          <a
+            href="mailto:contact@yourschool.edu"
+            class="hover:text-white transition"
+            >Contact</a
+          >
+        </div>
+      </div>
+    </footer>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyAVhLn8ApAtWPQa1qREHIemjax60IAFc58",
+        authDomain: "school-clubs-app.firebaseapp.com",
+        projectId: "school-clubs-app",
+        storageBucket: "school-clubs-app.appspot.com",
+        messagingSenderId: "206429567155",
+        appId: "1:206429567155:web:ddf3eba936a41c4b4d18c6",
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+    </script>
+    <script>
+      // Display user email
+      auth.onAuthStateChanged((user) => {
+        const profileEmail = document.getElementById("profileEmail");
+        const wrapper = document.getElementById("profileDropdownWrapper");
+        if (user) {
+          profileEmail.textContent = user.email;
+          wrapper.classList.remove("hidden");
+        } else {
+          wrapper.classList.add("hidden");
+        }
+      });
+
+      function login() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        auth
+          .signInWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            document.getElementById("auth-status").textContent =
+              "Logged in successfully!";
+          })
+          .catch((error) => {
+            document.getElementById("auth-status").textContent = error.message;
+          });
+      }
+
+      function signup() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        auth
+          .createUserWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            document.getElementById("auth-status").textContent =
+              "Account created!";
+          })
+          .catch((error) => {
+            document.getElementById("auth-status").textContent = error.message;
+          });
+      }
+      // Toggle dropdown
+      document.getElementById("profileToggle").addEventListener("click", () => {
+        const menu = document.getElementById("profileMenu");
+        menu.classList.toggle("hidden");
+      });
+
+      // Logout function
+      function logout() {
+        auth
+          .signOut()
+          .then(() => {
+            window.location.reload(); // or redirect to login
+          })
+          .catch((error) => {
+            alert("Error logging out: " + error.message);
+          });
+      }
+
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          console.log("User is signed in:", user.email);
+        } else {
+          console.log("No user signed in.");
+        }
+      });
+    </script>
+  </body>
+</html>

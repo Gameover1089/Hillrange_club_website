@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debate Club Details</title>
+    <script src="./tw.js"></script>
+    <link rel="icon" href="./hillclublogo.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      body { font-family: "Poppins", sans-serif; }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-800">
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12">
+            <img src="./hillclublogo.png" alt="Club Logo" class="w-full h-full object-contain" />
+          </div>
+          <span class="text-2xl font-bold text-yellow-900">School Clubs</span>
+        </div>
+        <a href="studen-dashboard.html" class="text-sm text-yellow-900 hover:text-yellow-700">← Back to Clubs</a>
+      </div>
+    </header>
+
+    <!-- Club Banner -->
+    <section class="bg-blue-100 py-12">
+      <div class="max-w-4xl mx-auto px-4 text-center">
+        <h2 class="text-4xl font-bold mb-2">Debate Club</h2>
+        <p class="text-lg text-gray-700">Sharpen your speaking skills and engage in fun debates.</p>
+      </div>
+    </section>
+
+    <!-- Club Details -->
+    <section class="py-16">
+      <div class="max-w-4xl mx-auto px-4 space-y-10">
+        <div>
+          <h3 class="text-2xl font-semibold mb-2">About the Club</h3>
+          <p class="text-gray-700">
+            The Debate Club is for students who enjoy discussing ideas, public speaking, and critical thinking. We organize debates, public speaking workshops, and friendly competitions.
+          </p>
+        </div>
+        <div>
+          <h3 class="text-2xl font-semibold mb-2">Club Leaders</h3>
+          <ul class="list-disc list-inside text-gray-700">
+            <li>Amaka Nwachukwu – President</li>
+            <li>John Bello – Vice President</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-2xl font-semibold mb-2">Meeting Schedule</h3>
+          <p class="text-gray-700">Tuesdays @ 3:30 PM in the Debate Hall</p>
+        </div>
+        <div>
+          <h3 class="text-2xl font-semibold mb-2">Gallery</h3>
+          <img src="https://images.unsplash.com/photo-1596495577886-d920f1fb7238?auto=format&fit=crop&w=800&q=80" alt="Debate Session" class="rounded-lg shadow-md w-full max-h-80 object-cover" />
+        </div>
+        <div class="text-center">
+          <a href="#" onclick="openModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">Join This Club</a>
+        </div>
+        <div id="joinModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center hidden">
+          <div class="bg-white rounded-xl p-8 w-full max-w-md shadow-lg relative">
+            <button onclick="closeModal()" class="absolute top-2 right-3 text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+            <h3 class="text-2xl font-bold mb-4 text-center text-blue-600">Join This Club</h3>
+            <form action="#" method="POST">
+              <input type="text" placeholder="First Name" required class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" placeholder="Last Name" required class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="hidden" value="Debate Club" />
+              <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Join Club</button>
+            </form>
+            <p id="successMsg" class="text-green-600 text-center mt-4 hidden">✅ You’ve joined successfully!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <footer class="bg-gray-900 text-gray-300 py-6 mt-12 w-full">
+      <div class="container mx-auto px-4 flex flex-col md:flex-row justify-between

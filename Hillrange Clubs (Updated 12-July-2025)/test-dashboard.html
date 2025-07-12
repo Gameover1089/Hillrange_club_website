@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="bootstrap.css" />
+    <link rel="stylesheet" href="bootstrap.min.css" />
+    <link rel="stylesheet" href="font-awesome.css" />
+    <link rel="stylesheet" href="font-awesome.min.css" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <title>Dashboard</title>
+  </head>
+  <body>
+    <!-- <header
+      class="bg-black text-white flex items-center justify-between px-6 py-3"
+    >
+      <div class="flex items-center gap-3">
+        <img src="hillrange-logo.png" alt="Hillrange Logo" class="h-10" />
+        <span class="text-lg font-semibold">Hillrange School Clubs</span>
+      </div>
+      <div
+        id="userEmail"
+        class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm"
+      ></div>
+    </header> -->
+    <header
+      class="bg-black text-white flex items-center justify-between px-6 py-3"
+    >
+      <div class="flex items-center gap-3">
+        <img src="hillclublogo.png" alt="Hillrange Logo" class="h-10" />
+        <span class="text-lg font-semibold">Hillrange School Clubs</span>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="hidden md:flex space-x-6">
+        <a
+          href="/"
+          class="text-white-900 hover:text-white-700 transition font-medium"
+          >Home</a
+        >
+        <a
+          href="#clubs"
+          class="text-white-900 hover:text-white-700 transition font-medium"
+          >Clubs</a
+        >
+        <a
+          href="#about"
+          class="text-white-900 hover:text-white-700 transition font-medium"
+          >About</a
+        >
+        <a
+          href="#contact"
+          class="text-white-900 hover:text-white-700 transition font-medium"
+          >Contact</a
+        >
+      </nav>
+      <div class="relative" id="profileDropdownWrapper">
+        <button
+          id="profileToggle"
+          class="flex items-center space-x-2 hover:bg-blue-700 text-white px-4 py-2 rounded focus:outline-none bg-blue-600 text-white px-4 py-2 rounded-md text-sm"
+        >
+          <img
+            src="spinner.svg"
+            style="height: 15px; width: 15px; display: inline-flex"
+            class="fa-spin"
+            alt=""
+          /><span id="profileEmail" class="text-sm">Loading...</span>
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div
+          id="profileMenu"
+          class="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md hidden"
+        >
+          <button
+            onclick="logout()"
+            class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    </header>
+    <!-- Main Layout -->
+    <main class="flex flex-1 p-6 gap-4">
+      <!-- Sidebar -->
+      <aside class="w-1/5">
+        <div
+          class="bg-blue-600 text-white rounded-2xl p-4 flex flex-col items-center"
+        >
+          <div class="w-16 h-16 bg-gray-300 rounded-full mb-4"></div>
+          <p class="text-center">
+            Hello,<br /><span id="accountRole" class="font-semibold"
+              >{Account_Role}</span
+            >
+          </p>
+        </div>
+      </aside>
+
+      <!-- Content -->
+      <section class="flex-1">
+        <!-- Joined Club -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold mb-2">Joined Club:</h3>
+          <div
+            id="joinedClub"
+            class="border border-gray-400 bg-white rounded-xl h-24 flex items-center justify-center text-gray-600"
+          >
+            No club joined yet
+          </div>
+        </div>
+
+        <!-- Available Clubs -->
+        <div>
+          <h3 class="text-lg font-semibold mb-4">Available Clubs:</h3>
+          <div id="clubsGrid" class="grid grid-cols-3 gap-4">
+            <!-- Club cards go here -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white text-center py-4 text-sm footer">
+      © 2025 Hillrange Secondary School. All rights reserved.
+    </footer>
+  </body>
+  <script src="tw.js"></script>
+  <script src="bootstrap.bundle.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="bootstrap.bundle.min.js"></script>
+</html>
